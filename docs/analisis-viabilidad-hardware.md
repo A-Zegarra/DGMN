@@ -268,14 +268,16 @@ El arte propio o la conversión de modelos oficiales puede sumar 2–4 semanas a
 - Servidor Colyseus 0.18 autoritativo, tick de 20 Hz, parches de 15 Hz,
   validación de velocidad, límites y orientación (`yaw`).
 - Cliente React 19 + Vite 8 + React Three Fiber 9 + Three.js 186.
-- **Tamer y Digimon separados**: el compañero sigue la dirección de movimiento,
-  se queda quieto cuando el tamer gira sin caminar y no consume estado de red
-  adicional.
+- **Tamer y Digimon separados**: el compañero deambula en un radio cercano, se
+  detiene a mirar al tamer y no consume estado de red adicional.
 - **Primera persona** con captura de ratón, mirada con pitch y **vista
   isométrica** con `V`.
-- **Joystick virtual visible** en primera persona desde móvil; la mirada táctil
-  usa la mitad derecha de la pantalla.
-- **Modelos low-poly propios** para Agumon, Gabumon y Patamon, con variantes
+- **Joystick virtual visible** en primera persona desde móvil y **zona táctil
+  dedicada** para mirar, independiente del joystick.
+- **Botón de pantalla completa** que intenta bloquear la orientación horizontal
+  en Android.
+- **Modelos low-poly propios** para Agumon, Gabumon y Patamon, con detalles
+  (ojos con brillo, dientes, lengua, pelaje, cuernos, orejas y garras), variantes
   para Greymon, Garurumon y Angemon, y un modelo genérico para el resto.
 - Terreno low-poly facetado, árboles/rocas/arbustos instanciados, plaza central
   y aparición separada de jugadores.
@@ -296,7 +298,9 @@ El arte propio o la conversión de modelos oficiales puede sumar 2–4 semanas a
 | Primera persona + ratón | Movimiento relativo a la cámara y yaw sincronizado |
 | Vista isométrica con `V` | Tamer y compañero visibles |
 | Clic para moverse en isométrica | Funciona; el jugador camina al punto |
-| Joystick y mirada táctil | Movimiento y giro verificados con eventos de puntero |
+| Joystick y mirada táctil | Movimiento y giro verificados antes y después de usar el joystick |
+| Compañero libre | Deambula alrededor del tamer y se detiene a mirarlo |
+| Pantalla completa | Botón presente; el bloqueo de orientación depende del navegador |
 | Tres jugadores en el mismo mundo | Visibles, separados y sincronizados |
 | Cuatro jugadores con modelos | 60 FPS, modelos Agumon, Gabumon y Patamon |
 | Chat entre jugadores | Recibido en los clientes |

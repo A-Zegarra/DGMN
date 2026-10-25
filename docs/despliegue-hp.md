@@ -165,11 +165,23 @@ las apps de producción. No se modificó el túnel existente.
 | Credenciales | `/home/alvaro/.cloudflared/39e832a4-ac09-485f-b3c7-242a88c76330.json` |
 | Servicio | `cloudflared-digiworld.service` |
 | Cliente | <https://digiworld.aliproinv.com> |
-| Juego | `wss://digiworld-api.aliproinv.com` |
-| Alias del juego | `wss://digiworld-game.aliproinv.com` |
+| Juego | `wss://digiworld.aliproinv.com` (mismo host) |
+| Alias del juego | `wss://digiworld-api.aliproinv.com`, `wss://digiworld-game.aliproinv.com` |
 
-El alias `digiworld-game` existe porque el navegador de pruebas mantuvo una
-caché DNS negativa del primer subdominio. Ambos apuntan al mismo servidor.
+El túnel enruta por **ruta** dentro del mismo hostname:
+
+- `/matchmake/*`, `/room/*`, `/health` y los WebSockets `/<room>/<token>`
+  van al puerto 2567.
+- Todo lo demás (`/`, `/assets/*`, `/robots.txt`) se sirve desde el cliente
+  estático en el puerto 8080.
+
+Así el navegador reutiliza el mismo origen para el matchmaking y el WebSocket,
+evita CORS y evita que la reserva de sala expire por un segundo subdominio.
+
+Los alias `digiworld-api` y `digiworld-game` apuntan directamente al servidor
+de juego. Se conservan por compatibilidad, pero el cliente usa el hostname
+principal. El alias `digiworld-game` también ayudó cuando el navegador mantuvo
+una caché DNS negativa del primer subdominio.
 
 Comandos:
 
@@ -184,12 +196,13 @@ Las rutas DNS se crearon con:
 ```bash
 cloudflared tunnel route dns --overwrite-dns 39e832a4-ac09-485f-b3c7-242a88c76330 digiworld.aliproinv.com
 cloudflared tunnel route dns --overwrite-dns 39e832a4-ac09-485f-b3c7-242a88c76330 digiworld-api.aliproinv.com
+cloudflared tunnel route dns --overwrite-dns 39e832a4-ac09-485f-b3c7-242a88c76330 digiworld-game.aliproinv.com
 ```
 
 Para compilar el cliente contra el servidor público:
 
 ```powershell
-$env:VITE_SERVER_URL = "https://digiworld-api.aliproinv.com"
+$env:VITE_SERVER_URL = "https://digiworld.aliproinv.com"
 pnpm --filter @digiworld/client build
 ```
 
@@ -237,7 +250,7 @@ Para una alfa de 20–30 jugadores conviene ejecutar el servidor compilado con
 La versión privada y el enlace público ya están activos:
 
 - Cliente público: `https://digiworld.aliproinv.com`
-- Servidor público: `wss://digiworld-api.aliproinv.com`
+- Servidor público: `wss://digiworld.aliproinv.com` (mismo host)
 - Cliente por Tailscale: `http://100.116.141.27:8080`
 
 Siguientes mejoras:

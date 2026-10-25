@@ -109,6 +109,15 @@ export function PatamonModel({
         <Eye position={[-0.115, 0.02, 0.265]} size={0.075} iris={iris} />
         <Eye position={[0.115, 0.02, 0.265]} size={0.075} iris={iris} />
 
+        <mesh position={[-0.215, -0.035, 0.225]} scale={[0.04, 0.022, 0.02]}>
+          <sphereGeometry args={[1, 6, 6]} />
+          <meshStandardMaterial color={accent} flatShading />
+        </mesh>
+        <mesh position={[0.215, -0.035, 0.225]} scale={[0.04, 0.022, 0.02]}>
+          <sphereGeometry args={[1, 6, 6]} />
+          <meshStandardMaterial color={accent} flatShading />
+        </mesh>
+
         <mesh position={[0, -0.12, 0.32]}>
           <boxGeometry args={[0.08, 0.02, 0.03]} />
           <meshBasicMaterial color="#4b2a33" />

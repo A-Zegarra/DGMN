@@ -115,12 +115,27 @@ export class WorldClient {
     name: string,
     species: string,
   ): Promise<WorldClient> {
-    const client = new Client(serverUrl);
-    const room = await client.joinOrCreate<WorldState>("world", {
-      name,
-      species,
-    });
-    return new WorldClient(room);
+    let lastError: unknown;
+
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      try {
+        const client = new Client(serverUrl);
+        const room = await client.joinOrCreate<WorldState>("world", {
+          name,
+          species,
+        });
+        return new WorldClient(room);
+      } catch (error) {
+        lastError = error;
+        if (attempt === 0) {
+          await new Promise((resolve) => setTimeout(resolve, 700));
+        }
+      }
+    }
+
+    throw lastError instanceof Error
+      ? lastError
+      : new Error("No se pudo conectar con el servidor.");
   }
 
   subscribeRoster(listener: () => void): () => void {

@@ -28,6 +28,7 @@ body {
   color: var(--text);
   font-family: var(--font);
   overflow: hidden;
+  overscroll-behavior: none;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -500,6 +501,23 @@ button {
   user-select: none;
 }
 
+.touch-look-area {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  touch-action: none;
+  pointer-events: auto;
+}
+
+.hud-top {
+  position: relative;
+  z-index: 10;
+}
+
+.hud-bottom {
+  z-index: 10;
+}
+
 .panel {
   border: 1px solid var(--panel-border);
   border-radius: 16px;
@@ -604,6 +622,29 @@ button {
 .camera-button:hover {
   border-color: rgba(124, 255, 178, 0.6);
   background: rgba(124, 255, 178, 0.14);
+}
+
+.screen-button {
+  margin-left: 2px;
+  padding: 5px 8px;
+  border: 1px solid rgba(85, 214, 255, 0.28);
+  border-radius: 9px;
+  background: rgba(85, 214, 255, 0.08);
+  color: #bdefff;
+  font-size: 0.62rem;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.screen-button:hover {
+  border-color: rgba(85, 214, 255, 0.6);
+  background: rgba(85, 214, 255, 0.14);
+}
+
+.screen-icon {
+  display: none;
+  font-size: 0.9rem;
+  line-height: 1;
 }
 
 .crosshair {
@@ -1191,5 +1232,10 @@ kbd {
   .exit-button {
     padding: 4px 7px;
     font-size: 0.58rem;
+  }
+
+  .screen-button {
+    padding: 4px 6px;
+    font-size: 0.56rem;
   }
 }

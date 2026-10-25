@@ -185,11 +185,27 @@ export function GabumonModel({
             <coneGeometry args={[0.11, 0.42, 5]} />
             <meshStandardMaterial color={body} flatShading roughness={0.9} />
           </mesh>
+          <mesh
+            position={[0, -0.015, 0.035]}
+            rotation-z={-0.6}
+            scale={[0.55, 0.78, 0.4]}
+          >
+            <coneGeometry args={[0.11, 0.42, 5]} />
+            <meshStandardMaterial color={fur} flatShading roughness={1} />
+          </mesh>
         </group>
         <group ref={rightEar} position={[0.27, 0.16, -0.02]}>
           <mesh rotation-z={0.6}>
             <coneGeometry args={[0.11, 0.42, 5]} />
             <meshStandardMaterial color={body} flatShading roughness={0.9} />
+          </mesh>
+          <mesh
+            position={[0, -0.015, 0.035]}
+            rotation-z={0.6}
+            scale={[0.55, 0.78, 0.4]}
+          >
+            <coneGeometry args={[0.11, 0.42, 5]} />
+            <meshStandardMaterial color={fur} flatShading roughness={1} />
           </mesh>
         </group>
 

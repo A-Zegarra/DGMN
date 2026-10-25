@@ -21,6 +21,10 @@ export function Eye({
         <sphereGeometry args={[size * 0.28, 6, 6]} />
         <meshBasicMaterial color="#07110b" />
       </mesh>
+      <mesh position={[-size * 0.24, size * 0.24, size * 1.02]}>
+        <sphereGeometry args={[size * 0.13, 6, 6]} />
+        <meshBasicMaterial color="#ffffff" />
+      </mesh>
     </group>
   );
 }

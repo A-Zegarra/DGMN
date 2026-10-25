@@ -15,10 +15,12 @@ un compañero y conversan por chat.
 - [x] Monorepo con cliente, servidor y contenido compartido.
 - [x] Servidor autoritativo con tick de 20 Hz y parches de 15 Hz.
 - [x] Movimiento con predicción local y reconciliación básica.
-- [x] Tamer y Digimon separados: el compañero sigue detrás según el movimiento.
+- [x] Tamer y Digimon separados: el compañero deambula cerca del tamer.
 - [x] Primera persona con ratón y vista isométrica con `V`.
 - [x] Joystick virtual visible en primera persona desde móvil.
-- [x] Controles táctiles: joystick izquierdo y mirada derecha.
+- [x] Zona táctil dedicada para mirar, independiente del joystick.
+- [x] Botón de pantalla completa horizontal / volver a vertical.
+- [x] Controles táctiles: joystick izquierdo y mirada en el resto de la pantalla.
 - [x] Modelos low-poly propios para Agumon, Gabumon y Patamon.
 - [x] Mapa low-poly con árboles, rocas y senderos instanciados.
 - [x] Selección de compañero: Agumon, Gabumon o Patamon.
@@ -78,9 +80,11 @@ HP, bórralo o cambia la URL a `http://localhost:2567`.
 Cliente estático en el HP: <http://100.116.141.27:8080>. Es la versión compilada
 y no necesita Vite ni la laptop encendida; solo Tailscale.
 
-Enlace público de prueba: <https://digiworld.aliproinv.com>. Usa
-`wss://digiworld-api.aliproinv.com` y pasa por Cloudflare Tunnel. No está
-indexado ni se promociona, pero cualquiera con el enlace puede entrar.
+Enlace público de prueba: <https://digiworld.aliproinv.com>. El cliente y el
+servidor comparten el mismo hostname: el túnel enruta `/matchmake`,
+`/room`, `/health` y los WebSockets al puerto 2567; el resto se sirve como
+cliente estático. No está indexado ni se promociona, pero cualquiera con el
+enlace puede entrar.
 
 Abre dos pestañas del navegador para ver a dos jugadores en el mismo mundo.
 También puedes abrir el cliente desde el teléfono en la misma red o por
@@ -104,16 +108,22 @@ Vite escucha en `0.0.0.0`. Si usas el HP como servidor, su IP de Tailscale es
 | Acción | Teclado / ratón | Táctil |
 |---|---|---|
 | Mover | `WASD` o flechas | Joystick izquierdo |
-| Mirar | Ratón (clic para capturarlo) | Arrastra la mitad derecha |
+| Mirar | Ratón (clic para capturarlo) | Arrastra fuera del joystick |
 | Cambiar vista | `V` o botón del HUD | Botón del HUD |
+| Pantalla completa | Botón **Pantalla** | Botón **Horizontal / Vertical** |
 | Correr | `Shift` | — |
 | Ir a un punto (isométrica) | Clic en el suelo | Toca el suelo |
 | Chat | `Enter` | Botón Chat |
 
-En primera persona controlas al **tamer** y tu Digimon camina detrás siguiendo
-la dirección del movimiento. Si te giras sin caminar, el Digimon se queda donde
-está y puedes mirarlo. La vista isométrica muestra a ambos y sirve mejor para
-orientarte o para el futuro combate.
+En primera persona controlas al **tamer**. El Digimon deambula alrededor del
+tamer, se detiene a mirarte y vuelve a moverse cada pocos segundos. Si giras la
+cámara, queda en el mundo y puedes verlo; no está pegado a la parte trasera de
+la vista. La vista isométrica muestra a ambos y sirve mejor para orientarte o
+para el futuro combate.
+
+El botón de pantalla completa intenta bloquear la orientación horizontal en
+Android. En navegadores que no permiten el bloqueo (por ejemplo, Safari en
+iPhone), la pantalla completa puede funcionar pero la rotación queda manual.
 
 ## Estructura
 
@@ -161,6 +171,22 @@ docs/                Diseño, análisis técnico y despliegue
 3. Experiencia, afinidad y primera evolución.
 4. Guardado SQLite de nivel, especie e inventario.
 5. Controles táctiles y prueba en un Android real.
+
+## Motor y modelos
+
+El cliente usa **Three.js 0.186 + React Three Fiber 9** como motor 3D web. No es
+un motor con editor visual, pero permite modelos GLB, animaciones esqueléticas,
+luces, sombras y materiales PBR sin salir del navegador.
+
+Cambiar a Unity o Godot implicaría reescribir el cliente y el sistema de
+despliegue actual, y probablemente perdería la ventaja de abrir el juego desde
+un enlace. Para conseguir más detalle no hace falta cambiar de motor: el
+siguiente paso es importar modelos GLB con sus animaciones y mantener los
+modelos procedurales como respaldo.
+
+Los modelos actuales de Agumon, Gabumon y Patamon son procedurales, low-poly y
+con detalles propios (ojos con brillo, dientes, lengua, pelaje, cuernos, orejas,
+garras y cola). Se pueden sustituir por GLB sin tocar el servidor.
 
 ## Servidor de pruebas
 

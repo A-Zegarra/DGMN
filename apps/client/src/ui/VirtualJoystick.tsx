@@ -44,7 +44,11 @@ export function VirtualJoystick({ client }: { client: WorldClient }) {
     event.stopPropagation();
     pointerId.current = event.pointerId;
     setActive(true);
-    baseRef.current?.setPointerCapture(event.pointerId);
+    try {
+      baseRef.current?.setPointerCapture(event.pointerId);
+    } catch {
+      // Algunos navegadores no permiten capturar este puntero.
+    }
     updateFromPointer(event.clientX, event.clientY);
   };
 

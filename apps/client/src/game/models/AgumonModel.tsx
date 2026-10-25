@@ -156,6 +156,20 @@ export function AgumonModel({
           <boxGeometry args={[0.2, 0.025, 0.05]} />
           <meshBasicMaterial color="#4a2c18" />
         </mesh>
+        <mesh position={[0, -0.17, 0.47]} scale={[0.075, 0.03, 0.09]}>
+          <sphereGeometry args={[1, 8, 6]} />
+          <meshStandardMaterial color="#e26d7c" flatShading roughness={0.7} />
+        </mesh>
+        {[-0.12, -0.04, 0.04, 0.12].map((x) => (
+          <mesh
+            key={x}
+            position={[x, -0.115, 0.49]}
+            rotation-x={Math.PI}
+          >
+            <coneGeometry args={[0.018, 0.055, 4]} />
+            <meshStandardMaterial color="#fffef7" flatShading />
+          </mesh>
+        ))}
 
         <mesh position={[-0.06, -0.02, 0.52]}>
           <sphereGeometry args={[0.018, 6, 6]} />

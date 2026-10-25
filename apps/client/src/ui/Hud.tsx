@@ -5,6 +5,7 @@ import { SPECIES } from "@digiworld/content";
 import type { WorldClient } from "../net/world-client";
 import { exitPointerLockSafe, requestPointerLockSafe } from "../pointer-lock";
 import { ChatPanel } from "./ChatPanel";
+import { TouchLookArea } from "./TouchLookArea";
 import { VirtualJoystick } from "./VirtualJoystick";
 
 export function Hud({
@@ -21,6 +22,9 @@ export function Hud({
     window.matchMedia("(pointer: coarse)").matches,
   );
   const [isNarrow, setIsNarrow] = useState(() => window.innerWidth <= 700);
+  const [fullscreen, setFullscreen] = useState(() =>
+    Boolean(document.fullscreenElement),
+  );
 
   useEffect(() => {
     return client.subscribeRoster(() => bumpRoster());
@@ -46,6 +50,21 @@ export function Hud({
     };
   }, []);
 
+  useEffect(() => {
+    const update = () => setFullscreen(Boolean(document.fullscreenElement));
+    update();
+    document.addEventListener("fullscreenchange", update);
+    document.addEventListener("webkitfullscreenchange", update as EventListener);
+
+    return () => {
+      document.removeEventListener("fullscreenchange", update);
+      document.removeEventListener(
+        "webkitfullscreenchange",
+        update as EventListener,
+      );
+    };
+  }, []);
+
   const players = Array.from(client.players.values());
   const local = client.players.get(client.localId);
   const species = local ? SPECIES[local.species] : undefined;
@@ -68,8 +87,61 @@ export function Hud({
     }
   };
 
+  const toggleScreen = async () => {
+    const doc = document as Document & {
+      webkitFullscreenElement?: Element | null;
+      webkitExitFullscreen?: () => Promise<void>;
+    };
+    const element = document.documentElement as HTMLElement & {
+      webkitRequestFullscreen?: () => Promise<void>;
+    };
+    const orientation = window.screen.orientation as ScreenOrientation & {
+      lock?: (orientation: "landscape" | "portrait") => Promise<void>;
+      unlock?: () => void;
+    };
+
+    try {
+      if (!document.fullscreenElement && !doc.webkitFullscreenElement) {
+        if (element.requestFullscreen) {
+          await element.requestFullscreen();
+        } else if (element.webkitRequestFullscreen) {
+          await element.webkitRequestFullscreen();
+        }
+
+        try {
+          await orientation.lock?.("landscape");
+        } catch {
+          // El navegador puede no permitir bloquear la orientación.
+        }
+      } else {
+        try {
+          orientation.unlock?.();
+        } catch {
+          // Sin bloqueo previo.
+        }
+
+        if (doc.exitFullscreen) {
+          await doc.exitFullscreen();
+        } else if (doc.webkitExitFullscreen) {
+          await doc.webkitExitFullscreen();
+        }
+      }
+    } catch {
+      // Pantalla completa no disponible (por ejemplo, iPhone).
+    }
+  };
+
+  const screenLabel = isMobile
+    ? fullscreen
+      ? "Vertical"
+      : "Horizontal"
+    : fullscreen
+      ? "Salir"
+      : "Pantalla";
+
   return (
     <div className="hud">
+      {isFirstPerson && isMobile && <TouchLookArea client={client} />}
       {isFirstPerson && <div className="crosshair" aria-hidden="true" />}
 
       <header className="hud-top">
@@ -92,6 +164,17 @@ export function Hud({
               title="Cambiar cámara (V)"
             >
               {isFirstPerson ? "1ª persona" : "Isométrica"}
+            </button>
+            <button
+              type="button"
+              className="screen-button"
+              onClick={() => void toggleScreen()}
+              title="Pantalla completa horizontal o volver a vertical"
+            >
+              <span className="screen-label">{screenLabel}</span>
+              <span className="screen-icon" aria-hidden="true">
+                {fullscreen ? "↺" : "⛶"}
+              </span>
             </button>
             <button type="button" className="exit-button" onClick={onExit}>
               Salir
