@@ -23,6 +23,7 @@ un compañero y conversan por chat.
 - [x] Chat de zona y lista de jugadores conectados.
 - [x] Desconexión limpia, aparición separada y actualización de jugadores.
 - [x] Cliente estático servido desde el HP y probado por Tailscale.
+- [x] Túnel público dedicado en Cloudflare, con `noindex`, separado de las apps existentes.
 - [ ] Combate, enemigos salvajes y evoluciones (siguiente etapa).
 - [ ] Guardado persistente.
 - [ ] Prueba en un Android físico.
@@ -75,14 +76,18 @@ HP, bórralo o cambia la URL a `http://localhost:2567`.
 Cliente estático en el HP: <http://100.116.141.27:8080>. Es la versión compilada
 y no necesita Vite ni la laptop encendida; solo Tailscale.
 
+Enlace público de prueba: <https://digiworld.aliproinv.com>. Usa
+`wss://digiworld-api.aliproinv.com` y pasa por Cloudflare Tunnel. No está
+indexado ni se promociona, pero cualquiera con el enlace puede entrar.
+
 Abre dos pestañas del navegador para ver a dos jugadores en el mismo mundo.
 También puedes abrir el cliente desde el teléfono en la misma red o por
 Tailscale.
 
 ### Probar desde el teléfono
 
-1. Conecta el teléfono a la misma red Tailscale que el HP.
-2. Abre `http://100.116.141.27:8080`.
+1. Con Internet: abre `https://digiworld.aliproinv.com`.
+2. Solo red local/Tailscale: abre `http://100.116.141.27:8080`.
 
 Para desarrollo con recarga en caliente, arranca `pnpm dev:client` en la laptop y
 abre `http://100.84.154.39:5173`. El cliente usa el servidor del HP
@@ -161,15 +166,18 @@ La instancia actual corre en el HP en dos procesos separados:
 |---|---|---|---|
 | Juego Colyseus | `/home/alvaro/digiworld` | 2567 | `server.pid` |
 | Cliente estático | `/home/alvaro/digiworld-web` | 8080 | `web.pid` |
+| Túnel Cloudflare | `~/.cloudflared/digiworld.yml` | — | `cloudflared-digiworld.service` |
 
 Con tres jugadores usa ~155 MB para el servidor del juego, ~56 MB para el
-wrapper de `tsx` y ~23 MB para el servidor web. No toca las apps existentes.
-Los detalles de actualización, arranque y parada están en
-[`docs/despliegue-hp.md`](docs/despliegue-hp.md).
+wrapper de `tsx`, ~23 MB para el servidor web y ~20 MB para el túnel. No toca
+las apps existentes. Los detalles de actualización, arranque, parada y
+Cloudflare están en [`docs/despliegue-hp.md`](docs/despliegue-hp.md).
 
 ## Notas de seguridad
 
 - No expongas el puerto 2567 directamente a Internet; usa Cloudflare Tunnel o
   Tailscale.
+- El enlace público no tiene autenticación. No lo promociones y, si se filtra,
+  rota el subdominio o añade Cloudflare Access.
 - Cambia la contraseña SSH del servidor y usa clave pública antes de desplegar.
 - Los assets oficiales van en `content/official/`, que está ignorado por Git.

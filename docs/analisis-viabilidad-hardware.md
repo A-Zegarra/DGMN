@@ -280,6 +280,8 @@ El arte propio o la conversión de modelos oficiales puede sumar 2–4 semanas a
 - Chat de zona con límite de frecuencia, lista de jugadores y desconexión limpia.
 - UI responsive con chat colapsable en móvil.
 - Build de producción correcto (1.34 MB de JS, 376 KB gzip) servido desde el HP.
+- **Túnel dedicado de Cloudflare** (`digiworld`) con servicio systemd propio,
+  separado del túnel de producción, y `noindex` en el cliente.
 
 ### Probado
 
@@ -294,9 +296,10 @@ El arte propio o la conversión de modelos oficiales puede sumar 2–4 semanas a
 | Chat entre jugadores | Recibido en los clientes |
 | Desconexión | El jugador desaparece y se anuncia en el chat |
 | Cliente estático en el HP | Conectado por Tailscale en el puerto 8080 |
+| Acceso público por Cloudflare | Cliente HTTPS + WebSocket `wss://`, chat y movimiento |
 | Rendimiento del cliente | 60 FPS a 800 × 674 CSS |
 | Layout móvil | Probado a 390 × 674 |
-| RAM del servidor con 3 jugadores | ~155 MB de juego + 56 MB de `tsx` + 23 MB web |
+| RAM del servidor con 3 jugadores | ~155 MB de juego + 56 MB de `tsx` + 23 MB web + 20 MB túnel |
 
 ### Pendiente inmediato
 
@@ -305,5 +308,5 @@ El arte propio o la conversión de modelos oficiales puede sumar 2–4 semanas a
 3. Experiencia, nivel y primera evolución.
 4. Guardado SQLite.
 5. Prueba en un Android físico.
-6. Publicación pública con Cloudflare Pages/Tunnel y decisión legal sobre assets.
+6. Autenticación opcional para el enlace público (Cloudflare Access o token).
 

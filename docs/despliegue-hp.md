@@ -154,6 +154,55 @@ cloudflared tunnel --url http://localhost:2567
 No abras el puerto 2567 en el router ni en el firewall. Publicar los nombres o
 assets oficiales de Digimon en Internet requiere resolver la licencia primero.
 
+### 4.1 Túnel público de Cloudflare
+
+El juego usa un túnel **dedicado**, separado del `cloudflared.service` que sirve
+las apps de producción. No se modificó el túnel existente.
+
+| Recurso | Valor |
+|---|---|
+| Túnel | `digiworld` |
+| ID | `39e832a4-ac09-485f-b3c7-242a88c76330` |
+| Config | `/home/alvaro/.cloudflared/digiworld.yml` |
+| Credenciales | `/home/alvaro/.cloudflared/39e832a4-ac09-485f-b3c7-242a88c76330.json` |
+| Servicio | `cloudflared-digiworld.service` |
+| Cliente | <https://digiworld.aliproinv.com> |
+| Juego | `wss://digiworld-api.aliproinv.com` |
+| Alias del juego | `wss://digiworld-game.aliproinv.com` |
+
+El alias `digiworld-game` existe porque el navegador de pruebas mantuvo una
+caché DNS negativa del primer subdominio. Ambos apuntan al mismo servidor.
+
+Comandos:
+
+```bash
+sudo systemctl status cloudflared-digiworld
+sudo systemctl restart cloudflared-digiworld
+sudo journalctl -u cloudflared-digiworld -f
+```
+
+Las rutas DNS se crearon con:
+
+```bash
+cloudflared tunnel route dns --overwrite-dns 39e832a4-ac09-485f-b3c7-242a88c76330 digiworld.aliproinv.com
+cloudflared tunnel route dns --overwrite-dns 39e832a4-ac09-485f-b3c7-242a88c76330 digiworld-api.aliproinv.com
+```
+
+Para compilar el cliente contra el servidor público:
+
+```powershell
+$env:VITE_SERVER_URL = "https://digiworld-api.aliproinv.com"
+pnpm --filter @digiworld/client build
+```
+
+Luego se sube `apps/client/dist` a `/home/alvaro/digiworld-web` como se indica
+en la sección 3.1.
+
+**Privacidad:** el enlace no está indexado (`robots.txt` y `noindex`) y no se
+promociona, pero cualquiera que lo conozca puede entrar: no hay autenticación
+todavía. Para una prueba más cerrada, añadir Cloudflare Access o un token de
+entrada en el servidor.
+
 ---
 
 ## 5. Consumo medido (25/10/2026)
