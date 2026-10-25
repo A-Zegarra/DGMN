@@ -268,10 +268,15 @@ El arte propio o la conversión de modelos oficiales puede sumar 2–4 semanas a
 - Servidor Colyseus 0.18 autoritativo, tick de 20 Hz, parches de 15 Hz,
   validación de velocidad, límites y orientación (`yaw`).
 - Cliente React 19 + Vite 8 + React Three Fiber 9 + Three.js 186.
-- **Tamer y Digimon separados**: el compañero se calcula en el cliente y camina
-  delante del tamer sin consumir estado de red adicional.
-- **Primera persona** con captura de ratón, mirada con pitch, joystick táctil y
-  **vista isométrica** con `V`.
+- **Tamer y Digimon separados**: el compañero sigue la dirección de movimiento,
+  se queda quieto cuando el tamer gira sin caminar y no consume estado de red
+  adicional.
+- **Primera persona** con captura de ratón, mirada con pitch y **vista
+  isométrica** con `V`.
+- **Joystick virtual visible** en primera persona desde móvil; la mirada táctil
+  usa la mitad derecha de la pantalla.
+- **Modelos low-poly propios** para Agumon, Gabumon y Patamon, con variantes
+  para Greymon, Garurumon y Angemon, y un modelo genérico para el resto.
 - Terreno low-poly facetado, árboles/rocas/arbustos instanciados, plaza central
   y aparición separada de jugadores.
 - Predicción local, reconciliación, interpolación de jugadores remotos y
@@ -293,6 +298,7 @@ El arte propio o la conversión de modelos oficiales puede sumar 2–4 semanas a
 | Clic para moverse en isométrica | Funciona; el jugador camina al punto |
 | Joystick y mirada táctil | Movimiento y giro verificados con eventos de puntero |
 | Tres jugadores en el mismo mundo | Visibles, separados y sincronizados |
+| Cuatro jugadores con modelos | 60 FPS, modelos Agumon, Gabumon y Patamon |
 | Chat entre jugadores | Recibido en los clientes |
 | Desconexión | El jugador desaparece y se anuncia en el chat |
 | Cliente estático en el HP | Conectado por Tailscale en el puerto 8080 |

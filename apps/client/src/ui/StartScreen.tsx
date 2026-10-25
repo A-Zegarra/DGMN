@@ -106,7 +106,7 @@ export function StartScreen({
             <span className="panel-title">En esta primera prueba</span>
             <ul>
               <li>Cámara en primera persona y vista isométrica</li>
-              <li>Tu Digimon camina delante de ti</li>
+              <li>Tu Digimon camina detrás de ti</li>
               <li>Varios jugadores en la misma zona</li>
               <li>Chat de zona y compañero inicial</li>
             </ul>

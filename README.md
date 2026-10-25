@@ -15,9 +15,11 @@ un compañero y conversan por chat.
 - [x] Monorepo con cliente, servidor y contenido compartido.
 - [x] Servidor autoritativo con tick de 20 Hz y parches de 15 Hz.
 - [x] Movimiento con predicción local y reconciliación básica.
-- [x] Tamer y Digimon separados: el compañero camina delante.
+- [x] Tamer y Digimon separados: el compañero sigue detrás según el movimiento.
 - [x] Primera persona con ratón y vista isométrica con `V`.
+- [x] Joystick virtual visible en primera persona desde móvil.
 - [x] Controles táctiles: joystick izquierdo y mirada derecha.
+- [x] Modelos low-poly propios para Agumon, Gabumon y Patamon.
 - [x] Mapa low-poly con árboles, rocas y senderos instanciados.
 - [x] Selección de compañero: Agumon, Gabumon o Patamon.
 - [x] Chat de zona y lista de jugadores conectados.
@@ -101,16 +103,17 @@ Vite escucha en `0.0.0.0`. Si usas el HP como servidor, su IP de Tailscale es
 
 | Acción | Teclado / ratón | Táctil |
 |---|---|---|
-| Mover | `WASD` o flechas | Arrastra la mitad izquierda |
+| Mover | `WASD` o flechas | Joystick izquierdo |
 | Mirar | Ratón (clic para capturarlo) | Arrastra la mitad derecha |
 | Cambiar vista | `V` o botón del HUD | Botón del HUD |
 | Correr | `Shift` | — |
 | Ir a un punto (isométrica) | Clic en el suelo | Toca el suelo |
 | Chat | `Enter` | Botón Chat |
 
-En primera persona controlas al **tamer** y tu Digimon camina delante. La vista
-isométrica muestra a ambos y sirve mejor para orientarte o para el futuro
-combate.
+En primera persona controlas al **tamer** y tu Digimon camina detrás siguiendo
+la dirección del movimiento. Si te giras sin caminar, el Digimon se queda donde
+está y puedes mirarlo. La vista isométrica muestra a ambos y sirve mejor para
+orientarte o para el futuro combate.
 
 ## Estructura
 
@@ -118,8 +121,9 @@ combate.
 apps/
   client/            React + Vite + React Three Fiber
     src/game/        Escena, cámara FP/isométrica, tamer y compañero
+    src/game/models/ Modelos low-poly por especie
     src/net/         Cliente Colyseus, predicción y mirada
-    src/ui/          Inicio, HUD, chat y controles
+    src/ui/          Inicio, HUD, chat y joystick
   server/            Colyseus 0.18
     src/rooms/       WorldRoom y estado autoritativo
 packages/
@@ -137,7 +141,7 @@ docs/                Diseño, análisis técnico y despliegue
 - El cliente predice su propio movimiento y corrige si se desvía más de 1.1 m.
 - Los demás jugadores se interpolan a partir de la posición autoritativa.
 - El compañero no se sincroniza: cada cliente calcula su seguimiento a partir
-  del tamer, así que no consume ancho de banda extra.
+  del movimiento del tamer, así que no consume ancho de banda extra.
 - El estado se sincroniza con `@colyseus/schema` 5 y la API `schema()`.
 
 ## Scripts

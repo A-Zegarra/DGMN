@@ -763,6 +763,67 @@ kbd {
   font-size: 0.68rem;
 }
 
+.virtual-joystick {
+  position: absolute;
+  bottom: 18px;
+  left: 18px;
+  z-index: 18;
+  width: 118px;
+  height: 118px;
+  border: 1px solid rgba(124, 255, 178, 0.28);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 45%, rgba(124, 255, 178, 0.08), transparent 65%),
+    rgba(5, 18, 12, 0.72);
+  box-shadow:
+    0 12px 30px rgba(0, 0, 0, 0.32),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(8px);
+  pointer-events: auto;
+  touch-action: none;
+  user-select: none;
+}
+
+.virtual-joystick.is-active {
+  border-color: rgba(124, 255, 178, 0.7);
+  box-shadow:
+    0 12px 30px rgba(0, 0, 0, 0.32),
+    0 0 24px rgba(124, 255, 178, 0.16);
+}
+
+.virtual-joystick-ring {
+  position: absolute;
+  inset: 17px;
+  border: 1px dashed rgba(124, 255, 178, 0.2);
+  border-radius: 50%;
+}
+
+.virtual-joystick-knob {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 52px;
+  height: 52px;
+  margin: -26px 0 0 -26px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #d6ffe6, #4fb47a 70%, #25724c);
+  box-shadow:
+    0 8px 18px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  will-change: transform;
+}
+
+.virtual-joystick-label {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #8fc9a9;
+  font-size: 0.52rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+}
+
 /* Chat */
 
 .chat-panel {
@@ -1012,6 +1073,14 @@ kbd {
     align-items: stretch;
   }
 
+  .partner-panel {
+    position: absolute;
+    top: 62px;
+    left: 10px;
+    width: 210px;
+    min-width: 0;
+  }
+
   .chat-panel {
     display: none;
     width: 100%;
@@ -1058,6 +1127,14 @@ kbd {
 
   .chat-hint {
     display: none;
+  }
+
+  .partner-panel {
+    position: absolute;
+    top: 62px;
+    left: 10px;
+    width: 220px;
+    min-width: 0;
   }
 }
 

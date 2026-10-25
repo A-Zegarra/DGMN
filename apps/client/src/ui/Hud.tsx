@@ -5,6 +5,7 @@ import { SPECIES } from "@digiworld/content";
 import type { WorldClient } from "../net/world-client";
 import { exitPointerLockSafe, requestPointerLockSafe } from "../pointer-lock";
 import { ChatPanel } from "./ChatPanel";
+import { VirtualJoystick } from "./VirtualJoystick";
 
 export function Hud({
   client,
@@ -19,6 +20,7 @@ export function Hud({
   const [isTouch, setIsTouch] = useState(() =>
     window.matchMedia("(pointer: coarse)").matches,
   );
+  const [isNarrow, setIsNarrow] = useState(() => window.innerWidth <= 700);
 
   useEffect(() => {
     return client.subscribeRoster(() => bumpRoster());
@@ -28,15 +30,19 @@ export function Hud({
     const update = () => setPointerLocked(Boolean(document.pointerLockElement));
     const media = window.matchMedia("(pointer: coarse)");
     const updateTouch = () => setIsTouch(media.matches);
+    const updateNarrow = () => setIsNarrow(window.innerWidth <= 700);
 
     update();
     updateTouch();
+    updateNarrow();
     document.addEventListener("pointerlockchange", update);
     media.addEventListener("change", updateTouch);
+    window.addEventListener("resize", updateNarrow);
 
     return () => {
       document.removeEventListener("pointerlockchange", update);
       media.removeEventListener("change", updateTouch);
+      window.removeEventListener("resize", updateNarrow);
     };
   }, []);
 
@@ -44,6 +50,7 @@ export function Hud({
   const local = client.players.get(client.localId);
   const species = local ? SPECIES[local.species] : undefined;
   const isFirstPerson = client.cameraMode === "first-person";
+  const isMobile = isTouch || isNarrow;
 
   const roster = players
     .slice()
@@ -120,9 +127,11 @@ export function Hud({
         </div>
       </header>
 
-      {isFirstPerson && !isTouch && !pointerLocked && (
+      {isFirstPerson && !isMobile && !pointerLocked && (
         <div className="fp-hint panel">Haz clic en el mundo para mirar</div>
       )}
+
+      {isFirstPerson && isMobile && <VirtualJoystick client={client} />}
 
       <footer className="hud-bottom">
         <div className="hud-bottom-left">
@@ -192,11 +201,9 @@ export function Hud({
             )}
           </div>
 
-          <div className="touch-hint panel">
-            {isFirstPerson
-              ? "Izquierda: moverte · Derecha: mirar"
-              : "Toca el suelo para moverte"}
-          </div>
+          {!(isFirstPerson && isMobile) && (
+            <div className="touch-hint panel">Toca el suelo para moverte</div>
+          )}
         </div>
 
         <ChatPanel
