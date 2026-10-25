@@ -1,0 +1,17 @@
+{
+  "name": "digiworld-online",
+  "version": "0.1.0",
+  "private": true,
+  "description": "MMORPG 3D ligero inspirado en Digimon. Prototipo interno.",
+  "packageManager": "pnpm@11.1.1",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "pnpm -r --parallel dev",
+    "dev:server": "pnpm --filter @digiworld/server dev",
+    "dev:client": "pnpm --filter @digiworld/client dev",
+    "typecheck": "pnpm -r typecheck",
+    "build": "pnpm -r build"
+  }
+}

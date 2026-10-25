@@ -1,0 +1,25 @@
+{
+  "name": "@digiworld/server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@colyseus/schema": "^5.0.42",
+    "@colyseus/tools": "^0.18.1",
+    "@digiworld/content": "workspace:*",
+    "@digiworld/shared": "workspace:*",
+    "colyseus": "^0.18.10",
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^24.10.0",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3"
+  }
+}

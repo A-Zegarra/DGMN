@@ -1,0 +1,14 @@
+{
+  "name": "@digiworld/shared",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./schema": "./src/schema.ts",
+    "./constants": "./src/constants.ts",
+    "./messages": "./src/messages.ts"
+  },
+  "dependencies": {
+    "@colyseus/schema": "^5.0.42"
+  }
+}

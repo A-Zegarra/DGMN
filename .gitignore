@@ -1,0 +1,15 @@
+node_modules/
+dist/
+build/
+.env
+.env.*
+!.env.example
+*.local
+.DS_Store
+coverage/
+*.log
+.vite/
+
+# Contenido oficial de terceros: nunca se publica ni se sube a GitHub.
+content/official/
+apps/client/public/assets/official/

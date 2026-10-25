@@ -1,0 +1,12 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+# Colyseus incluye transportes opcionales que traen uWebSockets.js desde git.
+blockExoticSubdeps: false
+
+autoInstallPeers: true
+strictPeerDependencies: false
+allowBuilds:
+  esbuild: true
+  msgpackr-extract: true
