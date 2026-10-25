@@ -29,60 +29,54 @@ Invoke-WebRequest http://100.116.141.27:8080/ -UseBasicParsing
 
 ---
 
-## 2. Arrancar y detener
+## 2. Servicios y operación
 
-Arrancar:
+Los tres procesos están registrados como servicios systemd y arrancan con el HP:
 
-```bash
-cd /home/alvaro/digiworld
-nohup pnpm --filter @digiworld/server start > server.log 2>&1 &
-echo $! > server.pid
-```
+| Servicio | Función | Puerto |
+|---|---|---|
+| `digiworld-server` | Servidor Colyseus | 2567 |
+| `digiworld-web` | Cliente estático con Python | 8080 |
+| `cloudflared-digiworld` | Túnel público dedicado | — |
 
-Detener:
-
-```bash
-cd /home/alvaro/digiworld
-pkill -f "[t]sx src/index.ts" || true
-[ -f server.pid ] && kill "$(cat server.pid)" 2>/dev/null || true
-rm -f server.pid
-```
-
-El patrón `[t]sx` evita que `pkill` se mate a sí mismo.
-
-Para que sobreviva a un reinicio del HP, conviene registrar el proceso en PM2:
+Comandos:
 
 ```bash
-cd /home/alvaro/digiworld/apps/server
-pm2 start "node --import tsx src/index.ts" --name digiworld-server --time
-pm2 save
+systemctl status digiworld-server digiworld-web cloudflared-digiworld
+sudo systemctl restart digiworld-server
+sudo systemctl restart digiworld-web
+sudo systemctl restart cloudflared-digiworld
+sudo journalctl -u digiworld-server -f
+sudo journalctl -u digiworld-web -f
+sudo journalctl -u cloudflared-digiworld -f
 ```
 
-> `pm2 save` reescribe la lista de procesos de PM2. Úsalo solo si estás de
-> acuerdo en añadir el juego a la lista existente.
+Detener temporalmente:
+
+```bash
+sudo systemctl stop digiworld-server digiworld-web cloudflared-digiworld
+```
+
+Volver a arrancar:
+
+```bash
+sudo systemctl start digiworld-server digiworld-web cloudflared-digiworld
+```
+
+Los servicios están `enabled`, así que sobreviven a un reinicio del HP. No se
+modificó `cloudflared.service`, el túnel de las apps de producción.
 
 ### 2.1 Cliente estático (puerto 8080)
 
-El cliente compilado se sirve con Python, sin Vite ni Nginx:
-
-```bash
-cd /home/alvaro
-nohup python3 -m http.server 8080 --bind 0.0.0.0 \
-  --directory /home/alvaro/digiworld-web > web.log 2>&1 &
-echo $! > web.pid
-```
-
-Detener:
-
-```bash
-[ -f /home/alvaro/web.pid ] && kill "$(cat /home/alvaro/web.pid)" 2>/dev/null || true
-rm -f /home/alvaro/web.pid
-```
+El cliente compilado se sirve con Python desde `/home/alvaro/digiworld-web`. No
+necesita Vite ni Nginx. Al reemplazar los archivos, el servicio sirve la versión
+nueva sin reiniciarse.
 
 Si el puerto queda ocupado por un proceso viejo:
 
 ```bash
 fuser -k 8080/tcp 2>/dev/null || true
+sudo systemctl restart digiworld-web
 ```
 
 `fuser` es más seguro que `pkill -f` para este caso porque no coincide con el
@@ -112,7 +106,11 @@ pnpm install --filter @digiworld/server...
 
 Extraer sobre la carpeta conserva `node_modules`. Solo ejecuta `pnpm install` si
 cambió `package.json` o `pnpm-lock.yaml`; para cambios de código basta con
-reiniciar el proceso.
+reiniciar el servicio:
+
+```bash
+sudo systemctl restart digiworld-server
+```
 
 ### 3.1 Actualizar el cliente estático
 
@@ -209,12 +207,12 @@ entrada en el servidor.
 
 | Métrica | Valor |
 |---|---|
-| Proceso Node del juego | ~155 MB RSS |
-| Proceso `tsx` auxiliar | ~56 MB RSS |
-| Servidor web Python | ~23 MB RSS |
+| `digiworld-server` (pnpm + tsx + Node) | ~167 MB RSS |
+| `digiworld-web` (Python) | ~12 MB RSS |
+| `cloudflared-digiworld` | ~20 MB RSS |
 | RAM disponible en el HP | ~3.4 GB |
 | Load average con 3 jugadores | 0.30 |
-| Jugadores probados | 3 pestañas contra el cliente estático por Tailscale |
+| Jugadores probados | 3 pestañas contra el cliente estático |
 | FPS del cliente | 60 FPS a 800 × 674 CSS |
 | Layout móvil | Probado en un iframe de 390 × 674 |
 
@@ -236,15 +234,16 @@ Para una alfa de 20–30 jugadores conviene ejecutar el servidor compilado con
 
 ## 7. Próximo paso de despliegue
 
-La versión privada ya está publicada en la tailnet:
+La versión privada y el enlace público ya están activos:
 
-- Cliente: `http://100.116.141.27:8080`
-- Servidor: `ws://100.116.141.27:2567`
+- Cliente público: `https://digiworld.aliproinv.com`
+- Servidor público: `wss://digiworld-api.aliproinv.com`
+- Cliente por Tailscale: `http://100.116.141.27:8080`
 
-Para abrirla a Internet:
+Siguientes mejoras:
 
-1. Crear un proyecto en Cloudflare Pages y subir `apps/client/dist`.
-2. Publicar el servidor con Cloudflare Tunnel y un subdominio, por ejemplo
-   `digiworld.aliproinv.com`.
-3. Recompilar el cliente con la URL `wss://` pública.
-4. Medir latencia y jugadores simultáneos antes de abrirlo a más gente.
+1. Añadir Cloudflare Access o un token de entrada si el enlace se comparte más.
+2. Medir latencia y jugadores simultáneos con usuarios reales.
+3. Reemplazar los assets oficiales por contenido original antes de cualquier
+   promoción pública.
+4. Migrar los servicios a un VPS si la alfa crece más allá de 20–30 jugadores.

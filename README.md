@@ -162,16 +162,16 @@ docs/                Diseño, análisis técnico y despliegue
 
 La instancia actual corre en el HP en dos procesos separados:
 
-| Servicio | Ruta | Puerto | Proceso |
+| Servicio | Ruta | Puerto | Unit |
 |---|---|---|---|
-| Juego Colyseus | `/home/alvaro/digiworld` | 2567 | `server.pid` |
-| Cliente estático | `/home/alvaro/digiworld-web` | 8080 | `web.pid` |
-| Túnel Cloudflare | `~/.cloudflared/digiworld.yml` | — | `cloudflared-digiworld.service` |
+| Juego Colyseus | `/home/alvaro/digiworld` | 2567 | `digiworld-server` |
+| Cliente estático | `/home/alvaro/digiworld-web` | 8080 | `digiworld-web` |
+| Túnel Cloudflare | `~/.cloudflared/digiworld.yml` | — | `cloudflared-digiworld` |
 
-Con tres jugadores usa ~155 MB para el servidor del juego, ~56 MB para el
-wrapper de `tsx`, ~23 MB para el servidor web y ~20 MB para el túnel. No toca
-las apps existentes. Los detalles de actualización, arranque, parada y
-Cloudflare están en [`docs/despliegue-hp.md`](docs/despliegue-hp.md).
+Con tres jugadores usa ~167 MB para el servicio del juego, ~12 MB para el
+servidor web y ~20 MB para el túnel. No toca las apps existentes. Los detalles
+de actualización, arranque, parada y Cloudflare están en
+[`docs/despliegue-hp.md`](docs/despliegue-hp.md).
 
 ## Notas de seguridad
 
