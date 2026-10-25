@@ -8,6 +8,8 @@ export interface InputMessage {
   z: number;
   run: boolean;
   seq: number;
+  /** Orientación deseada del tamer, en radianes. */
+  yaw?: number;
 }
 
 export interface ChatMessage {

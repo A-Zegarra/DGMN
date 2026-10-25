@@ -73,12 +73,10 @@ export class WorldRoom extends Room<{ state: WorldState }> {
     player.species = speciesId;
     player.level = 1;
 
-    const angle = Math.random() * Math.PI * 2;
-    const radius =
-      SPAWN_RADIUS_MIN + Math.random() * (SPAWN_RADIUS_MAX - SPAWN_RADIUS_MIN);
-    player.x = Math.cos(angle) * radius;
-    player.z = Math.sin(angle) * radius;
-    player.rot = angle + Math.PI;
+    const spawn = this.findSpawn();
+    player.x = spawn.x;
+    player.z = spawn.z;
+    player.rot = Math.atan2(-spawn.x, -spawn.z);
     player.lastInputAt = Date.now();
 
     this.state.players.set(client.sessionId, player);
@@ -128,6 +126,12 @@ export class WorldRoom extends Room<{ state: WorldState }> {
     player.inputZ = z;
     player.inputRunning = Boolean(message?.run);
     player.lastInputAt = Date.now();
+
+    const yaw = Number(message?.yaw);
+    if (Number.isFinite(yaw)) {
+      player.rot = Math.atan2(Math.sin(yaw), Math.cos(yaw));
+      player.lastYawAt = Date.now();
+    }
   }
 
   private handleChat(client: Client, message: { text?: string }) {
@@ -179,7 +183,9 @@ export class WorldRoom extends Room<{ state: WorldState }> {
           -WORLD_HALF,
           WORLD_HALF,
         );
-        player.rot = Math.atan2(inputX, inputZ);
+        if (now - player.lastYawAt > 500) {
+          player.rot = Math.atan2(inputX, inputZ);
+        }
         player.moving = true;
         player.running = player.inputRunning;
       } else if (player.moving) {
@@ -197,5 +203,35 @@ export class WorldRoom extends Room<{ state: WorldState }> {
       at: Date.now(),
       system: true,
     } satisfies ChatMessage);
+  }
+
+  /** Busca un punto de aparición alejado de los jugadores existentes. */
+  private findSpawn(): { x: number; z: number } {
+    let best = { x: 0, z: 0 };
+    let bestNearest = -1;
+
+    for (let attempt = 0; attempt < 64; attempt += 1) {
+      const angle = Math.random() * Math.PI * 2;
+      const radius =
+        SPAWN_RADIUS_MIN +
+        Math.random() * (SPAWN_RADIUS_MAX - SPAWN_RADIUS_MIN);
+      const x = Math.cos(angle) * radius;
+      const z = Math.sin(angle) * radius;
+
+      let nearest = Number.POSITIVE_INFINITY;
+      for (const other of this.state.players.values()) {
+        nearest = Math.min(nearest, Math.hypot(other.x - x, other.z - z));
+      }
+
+      if (nearest > bestNearest) {
+        bestNearest = nearest;
+        best = { x, z };
+      }
+      if (nearest > 6.5) {
+        break;
+      }
+    }
+
+    return best;
   }
 }

@@ -19,8 +19,8 @@ function roundRect(
 }
 
 function createNameTexture(
-  name: string,
-  level: number,
+  title: string,
+  subtitle: string,
   isLocal: boolean,
 ): THREE.CanvasTexture {
   const canvas = document.createElement("canvas");
@@ -50,12 +50,12 @@ function createNameTexture(
   context.font =
     "700 42px ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif";
   context.fillStyle = "#f2fff8";
-  context.fillText(name.slice(0, 16), 256, 52);
+  context.fillText(title.slice(0, 18), 256, 52, 450);
 
   context.font =
-    "700 30px ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif";
+    "700 28px ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif";
   context.fillStyle = "#8bffbf";
-  context.fillText(`Nv. ${level}`, 256, 94);
+  context.fillText(subtitle.slice(0, 22), 256, 94, 450);
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
@@ -65,21 +65,21 @@ function createNameTexture(
 }
 
 export function NameTag({
-  name,
-  level,
+  title,
+  subtitle,
   isLocal,
   y,
-  scale,
+  scale = 1,
 }: {
-  name: string;
-  level: number;
+  title: string;
+  subtitle: string;
   isLocal: boolean;
   y: number;
-  scale: number;
+  scale?: number;
 }) {
   const texture = useMemo(
-    () => createNameTexture(name, level, isLocal),
-    [name, level, isLocal],
+    () => createNameTexture(title, subtitle, isLocal),
+    [title, subtitle, isLocal],
   );
 
   useEffect(() => {
@@ -87,7 +87,11 @@ export function NameTag({
   }, [texture]);
 
   return (
-    <sprite position={[0, y, 0]} scale={[2.7 * scale, 0.675 * scale, 1]} renderOrder={20}>
+    <sprite
+      position={[0, y, 0]}
+      scale={[2.7 * scale, 0.675 * scale, 1]}
+      renderOrder={20}
+    >
       <spriteMaterial
         map={texture}
         transparent

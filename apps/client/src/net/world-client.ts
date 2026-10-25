@@ -16,6 +16,11 @@ const MOVEMENT_KEYS = new Set([
 ]);
 
 const INPUT_SEND_INTERVAL = 50;
+const LOOK_SENSITIVITY = 0.0026;
+const PITCH_MIN = -1.1;
+const PITCH_MAX = 0.85;
+
+export type CameraMode = "first-person" | "isometric";
 
 export interface PlayerView {
   id: string;
@@ -40,6 +45,7 @@ interface MoveInput {
   x: number;
   z: number;
   run: boolean;
+  yaw: number;
 }
 
 function clamp(value: number, min: number, max: number): number {
@@ -56,6 +62,10 @@ export class WorldClient {
   readonly localId: string;
   readonly players = new Map<string, PlayerView>();
 
+  cameraMode: CameraMode = "first-person";
+  yaw = 0;
+  pitch = 0;
+
   onDisconnect: (() => void) | null = null;
 
   private readonly callbacks: ReturnType<typeof Callbacks.get<WorldState>>;
@@ -64,10 +74,12 @@ export class WorldClient {
   private readonly chatListeners = new Set<(message: ChatMessage) => void>();
 
   private moveTarget: { x: number; z: number } | null = null;
+  private touchMove = { x: 0, y: 0 };
   private lastInputSignature = "";
   private lastInputSentAt = 0;
   private lastFrameAt = performance.now();
   private inputSeq = 0;
+  private yawInitialized = false;
 
   private constructor(room: Room<WorldState>) {
     this.room = room;
@@ -126,6 +138,47 @@ export class WorldClient {
     };
   }
 
+  toggleCameraMode(): CameraMode {
+    this.cameraMode =
+      this.cameraMode === "first-person" ? "isometric" : "first-person";
+
+    if (this.cameraMode === "first-person") {
+      const local = this.players.get(this.localId);
+      this.yaw = local
+        ? Math.atan2(Math.sin(local.rot), Math.cos(local.rot))
+        : this.yaw;
+      this.pitch = 0;
+      this.moveTarget = null;
+    } else {
+      this.pitch = 0;
+    }
+
+    this.touchMove = { x: 0, y: 0 };
+    this.emitRoster();
+    return this.cameraMode;
+  }
+
+  /** Delta del ratón o del dedo, en píxeles. */
+  addLook(deltaX: number, deltaY: number): void {
+    if (this.cameraMode !== "first-person") {
+      return;
+    }
+    this.yaw -= deltaX * LOOK_SENSITIVITY;
+    this.pitch = clamp(
+      this.pitch - deltaY * LOOK_SENSITIVITY * 0.85,
+      PITCH_MIN,
+      PITCH_MAX,
+    );
+  }
+
+  /** Joystick táctil: x = derecha, y = adelante. */
+  setTouchMove(x: number, y: number): void {
+    this.touchMove = {
+      x: clamp(x, -1, 1),
+      y: clamp(y, -1, 1),
+    };
+  }
+
   setKey(key: string, pressed: boolean): void {
     const normalized = key.toLowerCase();
     if (pressed) {
@@ -143,6 +196,9 @@ export class WorldClient {
   }
 
   setMoveTarget(x: number, z: number): void {
+    if (this.cameraMode !== "isometric") {
+      return;
+    }
     this.keys.clear();
     this.moveTarget = {
       x: clamp(x, -WORLD_HALF + 1, WORLD_HALF - 1),
@@ -165,9 +221,16 @@ export class WorldClient {
       const isMoving = input.x !== 0 || input.z !== 0;
       if (isMoving) {
         const speed = input.run ? RUN_SPEED : WALK_SPEED;
-        local.x = clamp(local.x + input.x * speed * dt, -WORLD_HALF, WORLD_HALF);
-        local.z = clamp(local.z + input.z * speed * dt, -WORLD_HALF, WORLD_HALF);
-        local.rot = Math.atan2(input.x, input.z);
+        local.x = clamp(
+          local.x + input.x * speed * dt,
+          -WORLD_HALF,
+          WORLD_HALF,
+        );
+        local.z = clamp(
+          local.z + input.z * speed * dt,
+          -WORLD_HALF,
+          WORLD_HALF,
+        );
         local.moving = true;
         local.running = input.run;
       } else {
@@ -175,12 +238,16 @@ export class WorldClient {
         local.running = false;
       }
 
+      local.rot = input.yaw;
+
       const dx = local.serverX - local.x;
       const dz = local.serverZ - local.z;
       if (Math.hypot(dx, dz) > 1.1) {
         local.x = local.serverX;
         local.z = local.serverZ;
-        local.rot = local.serverRot;
+        if (this.cameraMode === "isometric") {
+          local.rot = local.serverRot;
+        }
       }
     }
 
@@ -212,6 +279,13 @@ export class WorldClient {
     };
 
     this.players.set(id, view);
+
+    if (id === this.localId && !this.yawInitialized) {
+      this.yaw = Math.atan2(Math.sin(player.rot), Math.cos(player.rot));
+      this.pitch = 0;
+      this.yawInitialized = true;
+    }
+
     this.bindPlayer(player, view);
     this.emitRoster();
   }
@@ -243,21 +317,30 @@ export class WorldClient {
   }
 
   private readInput(local: PlayerView | undefined): MoveInput {
-    const forward =
+    const keyForward =
       (this.keys.has("w") || this.keys.has("arrowup") ? 1 : 0) -
       (this.keys.has("s") || this.keys.has("arrowdown") ? 1 : 0);
-    const right =
+    const keyRight =
       (this.keys.has("d") || this.keys.has("arrowright") ? 1 : 0) -
       (this.keys.has("a") || this.keys.has("arrowleft") ? 1 : 0);
+
+    const forward = keyForward + this.touchMove.y;
+    const right = keyRight + this.touchMove.x;
 
     let x = 0;
     let z = 0;
 
-    if (forward !== 0 || right !== 0) {
-      // Base de movimiento relativa a la cámara isométrica (+x, +z).
-      const inv = Math.SQRT1_2;
-      x = (right - forward) * inv;
-      z = (-right - forward) * inv;
+    if (Math.abs(forward) > 0.01 || Math.abs(right) > 0.01) {
+      if (this.cameraMode === "first-person") {
+        // Movimiento relativo a la dirección de la cámara.
+        x = forward * Math.sin(this.yaw) - right * Math.cos(this.yaw);
+        z = forward * Math.cos(this.yaw) + right * Math.sin(this.yaw);
+      } else {
+        // Base fija de la cámara isométrica (+x, +z).
+        const inv = Math.SQRT1_2;
+        x = (right - forward) * inv;
+        z = (-right - forward) * inv;
+      }
     } else if (this.moveTarget && local) {
       const dx = this.moveTarget.x - local.x;
       const dz = this.moveTarget.z - local.z;
@@ -277,16 +360,22 @@ export class WorldClient {
     }
 
     const moving = Math.hypot(x, z) > 0.01;
+    let yaw = this.yaw;
+    if (this.cameraMode === "isometric") {
+      yaw = moving ? Math.atan2(x, z) : (local?.rot ?? this.yaw);
+    }
+
     return {
       x: moving ? x : 0,
       z: moving ? z : 0,
       run: moving && this.keys.has("shift"),
+      yaw,
     };
   }
 
   private sendInput(input: MoveInput, now: number): void {
     const moving = input.x !== 0 || input.z !== 0;
-    const signature = `${input.x.toFixed(2)}:${input.z.toFixed(2)}:${input.run}`;
+    const signature = `${input.x.toFixed(2)}:${input.z.toFixed(2)}:${input.run}:${input.yaw.toFixed(3)}`;
     const changed = signature !== this.lastInputSignature;
 
     if (!moving && !changed) {
@@ -302,6 +391,7 @@ export class WorldClient {
       x: input.x,
       z: input.z,
       run: input.run,
+      yaw: input.yaw,
       seq: ++this.inputSeq,
     });
   }

@@ -21,6 +21,7 @@ export const PlayerState = schema(
     inputZ: t.number().noSync().default(0),
     inputRunning: t.boolean().noSync().default(false),
     lastInputAt: t.number().noSync().default(0),
+    lastYawAt: t.number().noSync().default(0),
   },
   "PlayerState",
 );

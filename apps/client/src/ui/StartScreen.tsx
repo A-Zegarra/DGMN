@@ -92,23 +92,23 @@ export function StartScreen({
 
           <p className="lead">
             Un MMORPG 3D ligero para navegador y Android. Explora el Bosque
-            Digital en tiempo real, entrena a tu compañero y prepárate para la
-            primera evolución.
+            Digital en primera persona junto a tu Digimon, en tiempo real y con
+            una vista isométrica cuando la necesites.
           </p>
 
           <ul className="feature-pills">
-            <li>3D low-poly isométrico</li>
-            <li>Mundo en tiempo real</li>
+            <li>Primera persona + isométrico</li>
+            <li>Tu Digimon te acompaña</li>
             <li>Web + Android</li>
           </ul>
 
           <div className="roadmap-card">
             <span className="panel-title">En esta primera prueba</span>
             <ul>
-              <li>Movimiento y cámara isométrica</li>
+              <li>Cámara en primera persona y vista isométrica</li>
+              <li>Tu Digimon camina delante de ti</li>
               <li>Varios jugadores en la misma zona</li>
-              <li>Chat de zona y guardado de nombre</li>
-              <li>Compañero inicial y su línea evolutiva</li>
+              <li>Chat de zona y compañero inicial</li>
             </ul>
           </div>
         </section>

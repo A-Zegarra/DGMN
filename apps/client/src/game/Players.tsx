@@ -1,7 +1,7 @@
 import { useEffect, useReducer } from "react";
 
 import type { WorldClient } from "../net/world-client";
-import { PlayerAvatar } from "./PlayerAvatar";
+import { PlayerEntity } from "./PlayerEntity";
 
 export function Players({ client }: { client: WorldClient }) {
   const [, bumpRoster] = useReducer((value: number) => value + 1, 0);
@@ -13,10 +13,11 @@ export function Players({ client }: { client: WorldClient }) {
   return (
     <>
       {Array.from(client.players.values()).map((player) => (
-        <PlayerAvatar
+        <PlayerEntity
           key={player.id}
           view={player}
           isLocal={player.id === client.localId}
+          cameraMode={client.cameraMode}
         />
       ))}
     </>

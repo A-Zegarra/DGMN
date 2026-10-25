@@ -15,15 +15,17 @@ un compañero y conversan por chat.
 - [x] Monorepo con cliente, servidor y contenido compartido.
 - [x] Servidor autoritativo con tick de 20 Hz y parches de 15 Hz.
 - [x] Movimiento con predicción local y reconciliación básica.
-- [x] Cámara isométrica que sigue al jugador.
+- [x] Tamer y Digimon separados: el compañero camina delante.
+- [x] Primera persona con ratón y vista isométrica con `V`.
+- [x] Controles táctiles: joystick izquierdo y mirada derecha.
 - [x] Mapa low-poly con árboles, rocas y senderos instanciados.
 - [x] Selección de compañero: Agumon, Gabumon o Patamon.
 - [x] Chat de zona y lista de jugadores conectados.
-- [x] Desconexión limpia y actualización de la lista de jugadores.
-- [x] Instancia de prueba desplegada en el HP y probada por Tailscale.
+- [x] Desconexión limpia, aparición separada y actualización de jugadores.
+- [x] Cliente estático servido desde el HP y probado por Tailscale.
 - [ ] Combate, enemigos salvajes y evoluciones (siguiente etapa).
 - [ ] Guardado persistente.
-- [ ] Controles táctiles dedicados.
+- [ ] Prueba en un Android físico.
 
 ## Requisitos
 
@@ -70,17 +72,20 @@ Servidor de pruebas en el HP (Tailscale): <http://100.116.141.27:2567/health>.
 El archivo `apps/client/.env.local` apunta a ese servidor. Si trabajas sin el
 HP, bórralo o cambia la URL a `http://localhost:2567`.
 
+Cliente estático en el HP: <http://100.116.141.27:8080>. Es la versión compilada
+y no necesita Vite ni la laptop encendida; solo Tailscale.
+
 Abre dos pestañas del navegador para ver a dos jugadores en el mismo mundo.
 También puedes abrir el cliente desde el teléfono en la misma red o por
 Tailscale.
 
 ### Probar desde el teléfono
 
-1. Conecta el teléfono a la misma red Tailscale que la laptop y el HP.
-2. Arranca el cliente en la laptop con `pnpm dev:client`.
-3. Abre en el teléfono `http://100.84.154.39:5173`.
+1. Conecta el teléfono a la misma red Tailscale que el HP.
+2. Abre `http://100.116.141.27:8080`.
 
-El cliente ya está configurado para usar el servidor del HP
+Para desarrollo con recarga en caliente, arranca `pnpm dev:client` en la laptop y
+abre `http://100.84.154.39:5173`. El cliente usa el servidor del HP
 (`ws://100.116.141.27:2567`) mediante `apps/client/.env.local`. Si el servidor
 está en la laptop, cambia esa URL a la IP de la laptop.
 
@@ -91,34 +96,43 @@ Vite escucha en `0.0.0.0`. Si usas el HP como servidor, su IP de Tailscale es
 
 | Acción | Teclado / ratón | Táctil |
 |---|---|---|
-| Mover | `WASD` o flechas | Toca el suelo |
+| Mover | `WASD` o flechas | Arrastra la mitad izquierda |
+| Mirar | Ratón (clic para capturarlo) | Arrastra la mitad derecha |
+| Cambiar vista | `V` o botón del HUD | Botón del HUD |
 | Correr | `Shift` | — |
-| Ir a un punto | Clic en el suelo | Toca el suelo |
-| Chat | `Enter` | Toca el campo |
+| Ir a un punto (isométrica) | Clic en el suelo | Toca el suelo |
+| Chat | `Enter` | Botón Chat |
+
+En primera persona controlas al **tamer** y tu Digimon camina delante. La vista
+isométrica muestra a ambos y sirve mejor para orientarte o para el futuro
+combate.
 
 ## Estructura
 
 ```text
 apps/
   client/            React + Vite + React Three Fiber
-    src/game/        Escena, cámara, terreno, props y avatares
-    src/net/         Cliente Colyseus y predicción local
-    src/ui/          Inicio, HUD y chat
+    src/game/        Escena, cámara FP/isométrica, tamer y compañero
+    src/net/         Cliente Colyseus, predicción y mirada
+    src/ui/          Inicio, HUD, chat y controles
   server/            Colyseus 0.18
     src/rooms/       WorldRoom y estado autoritativo
 packages/
   content/           Especies, estadísticas, evoluciones y zonas
   shared/            Esquema sincronizado, constantes y mensajes
-docs/                Diseño y análisis técnico
+docs/                Diseño, análisis técnico y despliegue
 ```
 
 ## Cómo funciona la red
 
-- El cliente envía solo la **intención de movimiento** (`x`, `z`, `run`) a 20 Hz.
+- El cliente envía la **intención de movimiento** (`x`, `z`, `run`) y la
+  orientación (`yaw`) a 20 Hz.
 - El servidor integra la posición, limita la velocidad y el área jugable, y
   detiene al jugador si deja de recibir input durante 250 ms.
 - El cliente predice su propio movimiento y corrige si se desvía más de 1.1 m.
 - Los demás jugadores se interpolan a partir de la posición autoritativa.
+- El compañero no se sincroniza: cada cliente calcula su seguimiento a partir
+  del tamer, así que no consume ancho de banda extra.
 - El estado se sincroniza con `@colyseus/schema` 5 y la API `schema()`.
 
 ## Scripts
@@ -141,9 +155,16 @@ docs/                Diseño y análisis técnico
 
 ## Servidor de pruebas
 
-La instancia actual corre en el HP, en `/home/alvaro/digiworld`, sobre el puerto
-2567. Usa ~124 MB de RAM con dos jugadores y no toca las apps existentes. Los
-detalles de actualización, arranque y parada están en
+La instancia actual corre en el HP en dos procesos separados:
+
+| Servicio | Ruta | Puerto | Proceso |
+|---|---|---|---|
+| Juego Colyseus | `/home/alvaro/digiworld` | 2567 | `server.pid` |
+| Cliente estático | `/home/alvaro/digiworld-web` | 8080 | `web.pid` |
+
+Con tres jugadores usa ~155 MB para el servidor del juego, ~56 MB para el
+wrapper de `tsx` y ~23 MB para el servidor web. No toca las apps existentes.
+Los detalles de actualización, arranque y parada están en
 [`docs/despliegue-hp.md`](docs/despliegue-hp.md).
 
 ## Notas de seguridad

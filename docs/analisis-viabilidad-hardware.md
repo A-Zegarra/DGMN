@@ -265,29 +265,38 @@ El arte propio o la conversión de modelos oficiales puede sumar 2–4 semanas a
 
 - Monorepo pnpm con `apps/client`, `apps/server`, `packages/shared` y
   `packages/content`.
-- Servidor Colyseus 0.18 autoritativo, tick de 20 Hz, parches de 15 Hz y
-  validación de velocidad y límites del mapa.
+- Servidor Colyseus 0.18 autoritativo, tick de 20 Hz, parches de 15 Hz,
+  validación de velocidad, límites y orientación (`yaw`).
 - Cliente React 19 + Vite 8 + React Three Fiber 9 + Three.js 186.
-- Cámara isométrica, terreno low-poly facetado, árboles/rocas/arbustos
-  instanciados y plaza central.
+- **Tamer y Digimon separados**: el compañero se calcula en el cliente y camina
+  delante del tamer sin consumir estado de red adicional.
+- **Primera persona** con captura de ratón, mirada con pitch, joystick táctil y
+  **vista isométrica** con `V`.
+- Terreno low-poly facetado, árboles/rocas/arbustos instanciados, plaza central
+  y aparición separada de jugadores.
 - Predicción local, reconciliación, interpolación de jugadores remotos y
   etiquetas de nombre con sprites de canvas.
 - Selección de Agumon, Gabumon o Patamon; datos de estadísticas y evoluciones.
 - Chat de zona con límite de frecuencia, lista de jugadores y desconexión limpia.
-- Build de producción correcto (1.33 MB de JS, 373 KB gzip).
+- UI responsive con chat colapsable en móvil.
+- Build de producción correcto (1.34 MB de JS, 376 KB gzip) servido desde el HP.
 
 ### Probado
 
 | Prueba | Resultado |
 |---|---|
 | Movimiento con WASD | ~4.2 m/s, corregido por el servidor |
-| Clic para moverse | Funciona; el jugador camina al punto |
-| Dos jugadores en el mismo mundo | Visibles y sincronizados |
-| Chat entre jugadores | Recibido en ambos clientes |
+| Primera persona + ratón | Movimiento relativo a la cámara y yaw sincronizado |
+| Vista isométrica con `V` | Tamer y compañero visibles |
+| Clic para moverse en isométrica | Funciona; el jugador camina al punto |
+| Joystick y mirada táctil | Movimiento y giro verificados con eventos de puntero |
+| Tres jugadores en el mismo mundo | Visibles, separados y sincronizados |
+| Chat entre jugadores | Recibido en los clientes |
 | Desconexión | El jugador desaparece y se anuncia en el chat |
-| Cliente en laptop → servidor HP | Conectado por Tailscale |
+| Cliente estático en el HP | Conectado por Tailscale en el puerto 8080 |
 | Rendimiento del cliente | 60 FPS a 800 × 674 CSS |
-| RAM del servidor con 2 jugadores | ~124 MB para el proceso del juego |
+| Layout móvil | Probado a 390 × 674 |
+| RAM del servidor con 3 jugadores | ~155 MB de juego + 56 MB de `tsx` + 23 MB web |
 
 ### Pendiente inmediato
 
@@ -295,5 +304,6 @@ El arte propio o la conversión de modelos oficiales puede sumar 2–4 semanas a
 2. Combate por turnos validado en el servidor.
 3. Experiencia, nivel y primera evolución.
 4. Guardado SQLite.
-5. Controles táctiles y prueba en un Android físico.
+5. Prueba en un Android físico.
+6. Publicación pública con Cloudflare Pages/Tunnel y decisión legal sobre assets.
 

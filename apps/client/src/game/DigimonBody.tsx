@@ -4,39 +4,32 @@ import * as THREE from "three";
 
 import { SPECIES } from "@digiworld/content";
 
-import type { PlayerView } from "../net/world-client";
-import { NameTag } from "./NameTag";
-
-export function PlayerAvatar({
-  view,
+export function DigimonBody({
+  speciesId,
+  moving,
+  running,
   isLocal,
 }: {
-  view: PlayerView;
+  speciesId: string;
+  moving: boolean;
+  running: boolean;
   isLocal: boolean;
 }) {
-  const group = useRef<THREE.Group>(null);
   const body = useRef<THREE.Group>(null);
-  const species = SPECIES[view.species] ?? SPECIES.agumon!;
+  const species = SPECIES[speciesId] ?? SPECIES.agumon!;
+  const scale = species.scale;
 
   useFrame((state) => {
-    const root = group.current;
-    if (!root) {
-      return;
-    }
-
-    root.position.set(view.x, 0, view.z);
-    root.rotation.y = view.rot;
-
     const rig = body.current;
     if (!rig) {
       return;
     }
 
     const time = state.clock.elapsedTime;
-    if (view.moving) {
-      const speed = view.running ? 15 : 10;
+    if (moving) {
+      const speed = running ? 15 : 10;
       rig.position.y = Math.abs(Math.sin(time * speed)) * 0.12;
-      rig.rotation.x = view.running ? -0.12 : -0.06;
+      rig.rotation.x = running ? -0.12 : -0.06;
       rig.rotation.z = Math.sin(time * speed) * 0.035;
     } else {
       rig.position.y = Math.sin(time * 2) * 0.018;
@@ -45,10 +38,8 @@ export function PlayerAvatar({
     }
   });
 
-  const scale = species.scale;
-
   return (
-    <group ref={group}>
+    <group>
       {isLocal && (
         <mesh rotation-x={-Math.PI / 2} position-y={0.035}>
           <ringGeometry args={[0.55 * scale, 0.72 * scale, 32]} />
@@ -100,14 +91,6 @@ export function PlayerAvatar({
           <meshStandardMaterial color={species.accent} flatShading />
         </mesh>
       </group>
-
-      <NameTag
-        name={view.name}
-        level={view.level}
-        isLocal={isLocal}
-        y={2.25 * scale}
-        scale={Math.max(1, scale * 0.95)}
-      />
     </group>
   );
 }

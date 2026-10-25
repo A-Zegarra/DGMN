@@ -18,8 +18,8 @@ export const MAX_NAME_LENGTH = 16;
 /** Si el servidor no recibe input en este tiempo, detiene al jugador. */
 export const INPUT_TIMEOUT_MS = 250;
 
-export const SPAWN_RADIUS_MIN = 4;
-export const SPAWN_RADIUS_MAX = 8;
+export const SPAWN_RADIUS_MIN = 6;
+export const SPAWN_RADIUS_MAX = 8.5;
 
 export const SERVER_TICK_MS = 1000 / TICK_RATE;
 export const PATCH_INTERVAL_MS = 1000 / PATCH_RATE;

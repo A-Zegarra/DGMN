@@ -4,8 +4,10 @@ import { useEffect } from "react";
 import { getZone } from "@digiworld/content";
 
 import type { WorldClient } from "../net/world-client";
+import { exitPointerLockSafe, requestPointerLockSafe } from "../pointer-lock";
 import { Hud } from "../ui/Hud";
 import { CameraRig } from "./CameraRig";
+import { FirstPersonControls } from "./FirstPersonControls";
 import { Forest } from "./Forest";
 import { Players } from "./Players";
 import { Terrain } from "./Terrain";
@@ -41,10 +43,17 @@ function Scene({ client }: { client: WorldClient }) {
       <hemisphereLight args={["#e8fff2", "#24402f", 0.7]} />
       <directionalLight position={[18, 30, 12]} intensity={2.1} />
 
-      <Terrain onPick={(x, z) => client.setMoveTarget(x, z)} />
+      <Terrain
+        onPick={(x, z) => {
+          if (client.cameraMode === "isometric") {
+            client.setMoveTarget(x, z);
+          }
+        }}
+      />
       <Forest />
       <Players client={client} />
       <CameraRig client={client} />
+      <FirstPersonControls client={client} />
     </>
   );
 }
@@ -69,6 +78,16 @@ export function Game({
       }
 
       const key = event.key.toLowerCase();
+      if (key === "v") {
+        event.preventDefault();
+        const nextMode = client.toggleCameraMode();
+        if (nextMode === "first-person") {
+          requestPointerLockSafe();
+        } else {
+          exitPointerLockSafe();
+        }
+        return;
+      }
       if (MOVEMENT_KEYS.includes(key)) {
         client.setKey(key, true);
         event.preventDefault();
@@ -79,7 +98,10 @@ export function Game({
       client.setKey(event.key.toLowerCase(), false);
     };
 
-    const handleBlur = () => client.clearKeys();
+    const handleBlur = () => {
+      client.clearKeys();
+      client.setTouchMove(0, 0);
+    };
 
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
@@ -98,7 +120,7 @@ export function Game({
         flat
         dpr={[1, 1.8]}
         gl={{ antialias: true, powerPreference: "high-performance" }}
-        camera={{ position: [18, 30, 18], fov: 34, near: 0.1, far: 240 }}
+        camera={{ position: [14, 25, 14], fov: 34, near: 0.1, far: 240 }}
       >
         <Simulation client={client} />
         <Scene client={client} />

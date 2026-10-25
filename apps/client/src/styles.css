@@ -567,6 +567,11 @@ button {
   padding: 7px 9px 7px 12px;
   color: #cfe8db;
   font-size: 0.7rem;
+  white-space: nowrap;
+}
+
+.status-panel > span:not(.live-dot) {
+  white-space: nowrap;
 }
 
 .exit-button {
@@ -582,6 +587,47 @@ button {
 
 .exit-button:hover {
   border-color: rgba(255, 255, 255, 0.28);
+}
+
+.camera-button {
+  margin-left: 4px;
+  padding: 5px 9px;
+  border: 1px solid rgba(124, 255, 178, 0.28);
+  border-radius: 9px;
+  background: rgba(124, 255, 178, 0.08);
+  color: #b9ffd5;
+  font-size: 0.63rem;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.camera-button:hover {
+  border-color: rgba(124, 255, 178, 0.6);
+  background: rgba(124, 255, 178, 0.14);
+}
+
+.crosshair {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(234, 255, 242, 0.92);
+  box-shadow: 0 0 0 3px rgba(124, 255, 178, 0.22);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.fp-hint {
+  position: absolute;
+  top: 82px;
+  left: 50%;
+  padding: 7px 12px;
+  transform: translateX(-50%);
+  color: #cfe8db;
+  font-size: 0.67rem;
+  pointer-events: none;
 }
 
 .roster-panel {
@@ -738,6 +784,35 @@ kbd {
 .chat-hint {
   color: #6f8a7c;
   font-size: 0.57rem;
+}
+
+.chat-close {
+  display: none;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #eafff2;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.chat-toggle {
+  display: none;
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  z-index: 16;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: rgba(7, 19, 14, 0.92);
+  color: #b9ffd5;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
 }
 
 .chat-list {
@@ -938,12 +1013,36 @@ kbd {
   }
 
   .chat-panel {
+    display: none;
     width: 100%;
     min-width: 0;
   }
 
+  .chat-panel.is-open {
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+    left: 10px;
+    z-index: 20;
+    display: flex;
+    width: auto;
+    max-height: 64vh;
+  }
+
+  .chat-close {
+    display: grid;
+  }
+
+  .chat-toggle {
+    display: block;
+  }
+
+  .fp-hint {
+    display: none;
+  }
+
   .chat-list {
-    height: 104px;
+    height: 132px;
   }
 }
 
@@ -980,8 +1079,17 @@ kbd {
     border-radius: 20px;
   }
 
+  .brand-copy,
   .brand-copy small {
     display: none;
+  }
+
+  .brand-panel {
+    padding: 8px;
+  }
+
+  .hud {
+    padding: 8px;
   }
 
   .partner-panel {
@@ -997,7 +1105,14 @@ kbd {
   }
 
   .status-panel {
-    font-size: 0.64rem;
-    padding: 6px 7px 6px 10px;
+    gap: 6px;
+    padding: 6px 7px 6px 9px;
+    font-size: 0.62rem;
+  }
+
+  .camera-button,
+  .exit-button {
+    padding: 4px 7px;
+    font-size: 0.58rem;
   }
 }

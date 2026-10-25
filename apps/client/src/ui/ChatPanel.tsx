@@ -12,7 +12,15 @@ function formatTime(timestamp: number): string {
   });
 }
 
-export function ChatPanel({ client }: { client: WorldClient }) {
+export function ChatPanel({
+  client,
+  open = true,
+  onClose,
+}: {
+  client: WorldClient;
+  open?: boolean;
+  onClose?: () => void;
+}) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState("");
   const listRef = useRef<HTMLDivElement>(null);
@@ -67,10 +75,18 @@ export function ChatPanel({ client }: { client: WorldClient }) {
   };
 
   return (
-    <section className="chat-panel panel">
+    <section className={`chat-panel panel ${open ? "is-open" : ""}`}>
       <header className="chat-header">
         <span className="panel-title">Chat de zona</span>
         <span className="chat-hint">Enter para escribir</span>
+        <button
+          type="button"
+          className="chat-close"
+          onClick={onClose}
+          aria-label="Cerrar chat"
+        >
+          ×
+        </button>
       </header>
 
       <div className="chat-list" ref={listRef}>

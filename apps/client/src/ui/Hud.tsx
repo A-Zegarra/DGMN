@@ -1,8 +1,9 @@
-import { useEffect, useReducer } from "react";
+import { useEffect, useReducer, useState } from "react";
 
 import { SPECIES } from "@digiworld/content";
 
 import type { WorldClient } from "../net/world-client";
+import { exitPointerLockSafe, requestPointerLockSafe } from "../pointer-lock";
 import { ChatPanel } from "./ChatPanel";
 
 export function Hud({
@@ -13,14 +14,36 @@ export function Hud({
   onExit: () => void;
 }) {
   const [, bumpRoster] = useReducer((value: number) => value + 1, 0);
+  const [pointerLocked, setPointerLocked] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [isTouch, setIsTouch] = useState(() =>
+    window.matchMedia("(pointer: coarse)").matches,
+  );
 
   useEffect(() => {
     return client.subscribeRoster(() => bumpRoster());
   }, [client]);
 
+  useEffect(() => {
+    const update = () => setPointerLocked(Boolean(document.pointerLockElement));
+    const media = window.matchMedia("(pointer: coarse)");
+    const updateTouch = () => setIsTouch(media.matches);
+
+    update();
+    updateTouch();
+    document.addEventListener("pointerlockchange", update);
+    media.addEventListener("change", updateTouch);
+
+    return () => {
+      document.removeEventListener("pointerlockchange", update);
+      media.removeEventListener("change", updateTouch);
+    };
+  }, []);
+
   const players = Array.from(client.players.values());
   const local = client.players.get(client.localId);
   const species = local ? SPECIES[local.species] : undefined;
+  const isFirstPerson = client.cameraMode === "first-person";
 
   const roster = players
     .slice()
@@ -29,8 +52,19 @@ export function Hud({
     )
     .slice(0, 7);
 
+  const toggleCamera = () => {
+    const next = client.toggleCameraMode();
+    if (next === "first-person") {
+      requestPointerLockSafe();
+    } else {
+      exitPointerLockSafe();
+    }
+  };
+
   return (
     <div className="hud">
+      {isFirstPerson && <div className="crosshair" aria-hidden="true" />}
+
       <header className="hud-top">
         <div className="brand-panel panel">
           <span className="brand-mark">DW</span>
@@ -44,6 +78,14 @@ export function Hud({
           <div className="status-panel panel">
             <span className="live-dot" />
             <span>{players.length} en línea</span>
+            <button
+              type="button"
+              className="camera-button"
+              onClick={toggleCamera}
+              title="Cambiar cámara (V)"
+            >
+              {isFirstPerson ? "1ª persona" : "Isométrica"}
+            </button>
             <button type="button" className="exit-button" onClick={onExit}>
               Salir
             </button>
@@ -78,6 +120,10 @@ export function Hud({
         </div>
       </header>
 
+      {isFirstPerson && !isTouch && !pointerLocked && (
+        <div className="fp-hint panel">Haz clic en el mundo para mirar</div>
+      )}
+
       <footer className="hud-bottom">
         <div className="hud-bottom-left">
           <div className="partner-panel panel">
@@ -101,28 +147,72 @@ export function Hud({
           </div>
 
           <div className="controls-panel panel">
-            <span>
-              <kbd>W</kbd>
-              <kbd>A</kbd>
-              <kbd>S</kbd>
-              <kbd>D</kbd> mover
-            </span>
-            <span>
-              <kbd>Shift</kbd> correr
-            </span>
-            <span>
-              <kbd>Clic</kbd> ir al punto
-            </span>
-            <span>
-              <kbd>Enter</kbd> chat
-            </span>
+            {isFirstPerson ? (
+              <>
+                <span>
+                  <kbd>W</kbd>
+                  <kbd>A</kbd>
+                  <kbd>S</kbd>
+                  <kbd>D</kbd> mover
+                </span>
+                <span>
+                  <kbd>Ratón</kbd> mirar
+                </span>
+                <span>
+                  <kbd>Shift</kbd> correr
+                </span>
+                <span>
+                  <kbd>V</kbd> cambiar vista
+                </span>
+                <span>
+                  <kbd>Enter</kbd> chat
+                </span>
+              </>
+            ) : (
+              <>
+                <span>
+                  <kbd>W</kbd>
+                  <kbd>A</kbd>
+                  <kbd>S</kbd>
+                  <kbd>D</kbd> mover
+                </span>
+                <span>
+                  <kbd>Shift</kbd> correr
+                </span>
+                <span>
+                  <kbd>Clic</kbd> ir al punto
+                </span>
+                <span>
+                  <kbd>V</kbd> cambiar vista
+                </span>
+                <span>
+                  <kbd>Enter</kbd> chat
+                </span>
+              </>
+            )}
           </div>
 
-          <div className="touch-hint panel">Toca el suelo para moverte</div>
+          <div className="touch-hint panel">
+            {isFirstPerson
+              ? "Izquierda: moverte · Derecha: mirar"
+              : "Toca el suelo para moverte"}
+          </div>
         </div>
 
-        <ChatPanel client={client} />
+        <ChatPanel
+          client={client}
+          open={chatOpen}
+          onClose={() => setChatOpen(false)}
+        />
       </footer>
+
+      <button
+        type="button"
+        className="chat-toggle panel"
+        onClick={() => setChatOpen((value) => !value)}
+      >
+        {chatOpen ? "Cerrar chat" : "Chat"}
+      </button>
     </div>
   );
 }
