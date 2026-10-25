@@ -9,9 +9,9 @@ import { DigimonBody } from "./DigimonBody";
 import { NameTag } from "./NameTag";
 
 const TARGET = new THREE.Vector3();
-const FOLLOW_RADIUS = 2.8;
-const FOLLOW_MAX = 4.8;
-const MIN_DISTANCE = 2.0;
+const FOLLOW_RADIUS = 3.0;
+const FOLLOW_MAX = 5.2;
+const MIN_DISTANCE = 2.2;
 const PARTNER_SPEED = 3.6;
 const CATCHUP_SPEED = 5.4;
 
@@ -35,6 +35,7 @@ export function PartnerAvatar({
   const lastTamer = useRef({ x: view.x, z: view.z });
   const heading = useRef(view.rot);
   const nextWanderAt = useRef(2.5 + Math.random() * 2);
+  const lastAvoidAt = useRef(-10);
   const movingRef = useRef(false);
   const [partnerMoving, setPartnerMoving] = useState(false);
 
@@ -50,16 +51,14 @@ export function PartnerAvatar({
     const now = state.clock.elapsedTime;
 
     if (!initialized.current) {
-      const startYaw = view.rot;
-      const rightX = -Math.cos(startYaw);
-      const rightZ = Math.sin(startYaw);
+      const sideAngle = view.rot + 0.5;
       target.current.set(
-        view.x - Math.sin(startYaw) * FOLLOW_RADIUS + rightX * 0.8,
+        view.x + Math.sin(sideAngle) * 3.2,
         0,
-        view.z - Math.cos(startYaw) * FOLLOW_RADIUS + rightZ * 0.8,
+        view.z + Math.cos(sideAngle) * 3.2,
       );
       root.position.copy(target.current);
-      root.rotation.y = startYaw;
+      root.rotation.y = sideAngle;
       initialized.current = true;
     }
 
@@ -81,11 +80,18 @@ export function PartnerAvatar({
       target.current.z - view.z,
     );
 
+    const cameraToTamerX = view.x - state.camera.position.x;
+    const cameraToTamerZ = view.z - state.camera.position.z;
+    const cameraDistance = Math.hypot(cameraToTamerX, cameraToTamerZ);
+    const thirdPerson = cameraDistance > 2;
+    const cameraBaseAngle = Math.atan2(cameraToTamerX, cameraToTamerZ);
+
     // Si el tamer se aleja, el compañero busca un nuevo punto cercano.
     if (tamerMoved > 0.003 && targetDistanceToTamer > 3.8) {
-      const angle =
-        heading.current + Math.PI + (Math.random() * 1.4 - 0.7);
-      const radius = 2.4 + Math.random() * 0.8;
+      const base = thirdPerson ? cameraBaseAngle : heading.current + Math.PI;
+      const spread = thirdPerson ? 0.7 : 1.4;
+      const angle = base + (Math.random() * spread - spread / 2);
+      const radius = 3.0 + Math.random() * 0.8;
       target.current.set(
         view.x + Math.sin(angle) * radius,
         0,
@@ -95,14 +101,22 @@ export function PartnerAvatar({
 
     // Sin moverse, deambula cada pocos segundos alrededor del tamer.
     if (tamerMoved <= 0.003 && now >= nextWanderAt.current) {
-      const currentAngle = Math.atan2(
-        root.position.x - view.x,
-        root.position.z - view.z,
-      );
-      const direction = Math.random() < 0.5 ? 1 : -1;
-      const angle =
-        currentAngle + direction * (0.8 + Math.random() * 1.1);
-      const radius = 2.1 + Math.random() * 1.2;
+      let angle: number;
+      let radius: number;
+      if (thirdPerson) {
+        // Delante o a los lados del tamer respecto a la cámara.
+        angle = cameraBaseAngle + (Math.random() * 0.7 - 0.35);
+        radius = 3.2 + Math.random() * 0.8;
+      } else {
+        const currentAngle = Math.atan2(
+          root.position.x - view.x,
+          root.position.z - view.z,
+        );
+        const direction = Math.random() < 0.5 ? 1 : -1;
+        angle = currentAngle + direction * (0.8 + Math.random() * 1.1);
+        radius = 2.4 + Math.random() * 1.1;
+      }
+
       target.current.set(
         view.x + Math.sin(angle) * radius,
         0,
@@ -113,15 +127,39 @@ export function PartnerAvatar({
 
     // Correa: nunca se aleja demasiado.
     if (distanceToTamer > FOLLOW_MAX) {
-      const angle = Math.atan2(
-        root.position.x - view.x,
-        root.position.z - view.z,
-      );
+      const angle = thirdPerson
+        ? cameraBaseAngle + (Math.random() * 0.4 - 0.2)
+        : Math.atan2(root.position.x - view.x, root.position.z - view.z);
       target.current.set(
         view.x + Math.sin(angle) * FOLLOW_RADIUS,
         0,
         view.z + Math.cos(angle) * FOLLOW_RADIUS,
       );
+    }
+
+    // Evita quedarse entre la cámara y el tamer en tercera persona.
+    if (thirdPerson && cameraDistance > 2.5) {
+      const dirX = cameraToTamerX / cameraDistance;
+      const dirZ = cameraToTamerZ / cameraDistance;
+      const relX = root.position.x - state.camera.position.x;
+      const relZ = root.position.z - state.camera.position.z;
+      const along = relX * dirX + relZ * dirZ;
+      const lateral = relX * dirZ - relZ * dirX;
+
+      if (
+        along > 0.6 &&
+        along < cameraDistance - 0.8 &&
+        Math.abs(lateral) < 1.1 &&
+        now - lastAvoidAt.current > 1.2
+      ) {
+        const side = lateral >= 0 ? 1 : -1;
+        target.current.set(
+          view.x + dirZ * side * 2.7,
+          0,
+          view.z - dirX * side * 2.7,
+        );
+        lastAvoidAt.current = now;
+      }
     }
 
     const dx = target.current.x - root.position.x;

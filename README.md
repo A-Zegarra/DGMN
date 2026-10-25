@@ -16,13 +16,14 @@ un compañero y conversan por chat.
 - [x] Servidor autoritativo con tick de 20 Hz y parches de 15 Hz.
 - [x] Movimiento con predicción local y reconciliación básica.
 - [x] Tamer y Digimon separados: el compañero deambula cerca del tamer.
-- [x] Primera persona con ratón y vista isométrica con `V`.
-- [x] Joystick virtual visible en primera persona desde móvil.
+- [x] Primera y tercera persona con cámara libre y `V`.
+- [x] Joystick virtual visible en primera y tercera persona desde móvil.
 - [x] Zona táctil dedicada para mirar, independiente del joystick.
 - [x] Botón de pantalla completa horizontal / volver a vertical.
 - [x] Controles táctiles: joystick izquierdo y mirada en el resto de la pantalla.
 - [x] Modelos low-poly propios para Agumon, Gabumon y Patamon.
-- [x] Mapa low-poly con árboles, rocas y senderos instanciados.
+- [x] Tercera persona con sombras suaves, cielo degradado, texturas, vegetación y colinas.
+- [x] Terreno visual de 400 × 400 m con árboles, rocas y senderos instanciados.
 - [x] Selección de compañero: Agumon, Gabumon o Patamon.
 - [x] Chat de zona y lista de jugadores conectados.
 - [x] Desconexión limpia, aparición separada y actualización de jugadores.
@@ -108,18 +109,16 @@ Vite escucha en `0.0.0.0`. Si usas el HP como servidor, su IP de Tailscale es
 | Acción | Teclado / ratón | Táctil |
 |---|---|---|
 | Mover | `WASD` o flechas | Joystick izquierdo |
-| Mirar | Ratón (clic para capturarlo) | Arrastra fuera del joystick |
+| Mirar / orbitar | Ratón (clic para capturarlo) | Arrastra fuera del joystick |
 | Cambiar vista | `V` o botón del HUD | Botón del HUD |
 | Pantalla completa | Botón **Pantalla** | Botón **Horizontal / Vertical** |
 | Correr | `Shift` | — |
-| Ir a un punto (isométrica) | Clic en el suelo | Toca el suelo |
 | Chat | `Enter` | Botón Chat |
 
-En primera persona controlas al **tamer**. El Digimon deambula alrededor del
-tamer, se detiene a mirarte y vuelve a moverse cada pocos segundos. Si giras la
-cámara, queda en el mundo y puedes verlo; no está pegado a la parte trasera de
-la vista. La vista isométrica muestra a ambos y sirve mejor para orientarte o
-para el futuro combate.
+En tercera persona ves al tamer desde detrás y puedes orbitar la cámara. El
+Digimon deambula alrededor del tamer, se detiene a mirarte y vuelve a moverse
+cada pocos segundos; no se queda pegado a la cámara. En primera persona lo ves
+al girarte. La vista isométrica se retiró para evitar el aspecto de tablero.
 
 El botón de pantalla completa intenta bloquear la orientación horizontal en
 Android. En navegadores que no permiten el bloqueo (por ejemplo, Safari en
@@ -130,7 +129,7 @@ iPhone), la pantalla completa puede funcionar pero la rotación queda manual.
 ```text
 apps/
   client/            React + Vite + React Three Fiber
-    src/game/        Escena, cámara FP/isométrica, tamer y compañero
+    src/game/        Escena, cámara FP/TP, tamer y compañero
     src/game/models/ Modelos low-poly por especie
     src/net/         Cliente Colyseus, predicción y mirada
     src/ui/          Inicio, HUD, chat y joystick
@@ -170,23 +169,25 @@ docs/                Diseño, análisis técnico y despliegue
 2. Combate por turnos validado en el servidor.
 3. Experiencia, afinidad y primera evolución.
 4. Guardado SQLite de nivel, especie e inventario.
-5. Controles táctiles y prueba en un Android real.
+5. Prueba en un Android real.
+6. Modelos GLB con animaciones esqueléticas.
 
 ## Motor y modelos
 
-El cliente usa **Three.js 0.186 + React Three Fiber 9** como motor 3D web. No es
-un motor con editor visual, pero permite modelos GLB, animaciones esqueléticas,
-luces, sombras y materiales PBR sin salir del navegador.
+El cliente usa **Three.js 0.186 + React Three Fiber 9** como motor 3D web. La
+vista principal es **tercera persona**; `V` alterna a primera persona. La
+isométrica se retiró para evitar el aspecto de tablero.
 
-Cambiar a Unity o Godot implicaría reescribir el cliente y el sistema de
-despliegue actual, y probablemente perdería la ventaja de abrir el juego desde
-un enlace. Para conseguir más detalle no hace falta cambiar de motor: el
-siguiente paso es importar modelos GLB con sus animaciones y mantener los
-modelos procedurales como respaldo.
+El render incluye sombras suaves, una luz solar que sigue al jugador, cielo
+degradado con shader, terreno de 400 × 400 m con texturas procedurales de césped
+y tierra, matas de hierba, flores y colinas lejanas. Los modelos actuales de
+Agumon, Gabumon y Patamon son procedurales, low-poly y con detalles propios
+(ojos con brillo, dientes, lengua, pelaje, cuernos, orejas, garras y cola).
 
-Los modelos actuales de Agumon, Gabumon y Patamon son procedurales, low-poly y
-con detalles propios (ojos con brillo, dientes, lengua, pelaje, cuernos, orejas,
-garras y cola). Se pueden sustituir por GLB sin tocar el servidor.
+Cambiar a Unity o Godot implicaría reescribir el cliente y el despliegue actual.
+Para conseguir aún más detalle no hace falta cambiar de motor: el siguiente paso
+es importar modelos **GLB** con sus animaciones y mantener los procedurales como
+respaldo. Se pueden sustituir sin tocar el servidor.
 
 ## Servidor de pruebas
 

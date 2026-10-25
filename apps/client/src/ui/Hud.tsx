@@ -3,7 +3,7 @@ import { useEffect, useReducer, useState } from "react";
 import { SPECIES } from "@digiworld/content";
 
 import type { WorldClient } from "../net/world-client";
-import { exitPointerLockSafe, requestPointerLockSafe } from "../pointer-lock";
+import { requestPointerLockSafe } from "../pointer-lock";
 import { ChatPanel } from "./ChatPanel";
 import { TouchLookArea } from "./TouchLookArea";
 import { VirtualJoystick } from "./VirtualJoystick";
@@ -79,12 +79,8 @@ export function Hud({
     .slice(0, 7);
 
   const toggleCamera = () => {
-    const next = client.toggleCameraMode();
-    if (next === "first-person") {
-      requestPointerLockSafe();
-    } else {
-      exitPointerLockSafe();
-    }
+    client.toggleCameraMode();
+    requestPointerLockSafe();
   };
 
   const toggleScreen = async () => {
@@ -141,7 +137,7 @@ export function Hud({
 
   return (
     <div className="hud">
-      {isFirstPerson && isMobile && <TouchLookArea client={client} />}
+      {isMobile && <TouchLookArea client={client} />}
       {isFirstPerson && <div className="crosshair" aria-hidden="true" />}
 
       <header className="hud-top">
@@ -163,7 +159,7 @@ export function Hud({
               onClick={toggleCamera}
               title="Cambiar cámara (V)"
             >
-              {isFirstPerson ? "1ª persona" : "Isométrica"}
+              {isFirstPerson ? "1ª persona" : "3ª persona"}
             </button>
             <button
               type="button"
@@ -210,11 +206,11 @@ export function Hud({
         </div>
       </header>
 
-      {isFirstPerson && !isMobile && !pointerLocked && (
-        <div className="fp-hint panel">Haz clic en el mundo para mirar</div>
+      {!isMobile && !pointerLocked && (
+        <div className="fp-hint panel">Haz clic para mirar</div>
       )}
 
-      {isFirstPerson && isMobile && <VirtualJoystick client={client} />}
+      {isMobile && <VirtualJoystick client={client} />}
 
       <footer className="hud-bottom">
         <div className="hud-bottom-left">
@@ -239,54 +235,25 @@ export function Hud({
           </div>
 
           <div className="controls-panel panel">
-            {isFirstPerson ? (
-              <>
-                <span>
-                  <kbd>W</kbd>
-                  <kbd>A</kbd>
-                  <kbd>S</kbd>
-                  <kbd>D</kbd> mover
-                </span>
-                <span>
-                  <kbd>Ratón</kbd> mirar
-                </span>
-                <span>
-                  <kbd>Shift</kbd> correr
-                </span>
-                <span>
-                  <kbd>V</kbd> cambiar vista
-                </span>
-                <span>
-                  <kbd>Enter</kbd> chat
-                </span>
-              </>
-            ) : (
-              <>
-                <span>
-                  <kbd>W</kbd>
-                  <kbd>A</kbd>
-                  <kbd>S</kbd>
-                  <kbd>D</kbd> mover
-                </span>
-                <span>
-                  <kbd>Shift</kbd> correr
-                </span>
-                <span>
-                  <kbd>Clic</kbd> ir al punto
-                </span>
-                <span>
-                  <kbd>V</kbd> cambiar vista
-                </span>
-                <span>
-                  <kbd>Enter</kbd> chat
-                </span>
-              </>
-            )}
+            <span>
+              <kbd>W</kbd>
+              <kbd>A</kbd>
+              <kbd>S</kbd>
+              <kbd>D</kbd> mover
+            </span>
+            <span>
+              <kbd>Ratón</kbd> {isFirstPerson ? "mirar" : "orbitar"}
+            </span>
+            <span>
+              <kbd>Shift</kbd> correr
+            </span>
+            <span>
+              <kbd>V</kbd> cambiar vista
+            </span>
+            <span>
+              <kbd>Enter</kbd> chat
+            </span>
           </div>
-
-          {!(isFirstPerson && isMobile) && (
-            <div className="touch-hint panel">Toca el suelo para moverte</div>
-          )}
         </div>
 
         <ChatPanel

@@ -4,23 +4,14 @@ import { RUN_SPEED, WALK_SPEED, WORLD_HALF } from "@digiworld/shared/constants";
 import type { ChatMessage } from "@digiworld/shared/messages";
 import type { PlayerState, WorldState } from "@digiworld/shared/schema";
 
-const MOVEMENT_KEYS = new Set([
-  "w",
-  "a",
-  "s",
-  "d",
-  "arrowup",
-  "arrowdown",
-  "arrowleft",
-  "arrowright",
-]);
-
 const INPUT_SEND_INTERVAL = 50;
 const LOOK_SENSITIVITY = 0.0026;
-const PITCH_MIN = -1.1;
-const PITCH_MAX = 0.85;
+const FP_PITCH_MIN = -1.1;
+const FP_PITCH_MAX = 0.85;
+const TP_PITCH_MIN = -0.25;
+const TP_PITCH_MAX = 0.75;
 
-export type CameraMode = "first-person" | "isometric";
+export type CameraMode = "first-person" | "third-person";
 
 export interface PlayerView {
   id: string;
@@ -62,9 +53,9 @@ export class WorldClient {
   readonly localId: string;
   readonly players = new Map<string, PlayerView>();
 
-  cameraMode: CameraMode = "first-person";
+  cameraMode: CameraMode = "third-person";
   yaw = 0;
-  pitch = 0;
+  pitch = 0.2;
 
   onDisconnect: (() => void) | null = null;
 
@@ -73,7 +64,6 @@ export class WorldClient {
   private readonly rosterListeners = new Set<() => void>();
   private readonly chatListeners = new Set<(message: ChatMessage) => void>();
 
-  private moveTarget: { x: number; z: number } | null = null;
   private touchMove = { x: 0, y: 0 };
   private lastInputSignature = "";
   private lastInputSentAt = 0;
@@ -155,19 +145,13 @@ export class WorldClient {
 
   toggleCameraMode(): CameraMode {
     this.cameraMode =
-      this.cameraMode === "first-person" ? "isometric" : "first-person";
+      this.cameraMode === "first-person" ? "third-person" : "first-person";
 
-    if (this.cameraMode === "first-person") {
-      const local = this.players.get(this.localId);
-      this.yaw = local
-        ? Math.atan2(Math.sin(local.rot), Math.cos(local.rot))
-        : this.yaw;
-      this.pitch = 0;
-      this.moveTarget = null;
-    } else {
-      this.pitch = 0;
-    }
-
+    const local = this.players.get(this.localId);
+    this.yaw = local
+      ? Math.atan2(Math.sin(local.rot), Math.cos(local.rot))
+      : this.yaw;
+    this.pitch = this.cameraMode === "first-person" ? 0 : 0.2;
     this.touchMove = { x: 0, y: 0 };
     this.emitRoster();
     return this.cameraMode;
@@ -175,14 +159,21 @@ export class WorldClient {
 
   /** Delta del ratón o del dedo, en píxeles. */
   addLook(deltaX: number, deltaY: number): void {
-    if (this.cameraMode !== "first-person") {
+    this.yaw -= deltaX * LOOK_SENSITIVITY;
+
+    if (this.cameraMode === "first-person") {
+      this.pitch = clamp(
+        this.pitch - deltaY * LOOK_SENSITIVITY * 0.85,
+        FP_PITCH_MIN,
+        FP_PITCH_MAX,
+      );
       return;
     }
-    this.yaw -= deltaX * LOOK_SENSITIVITY;
+
     this.pitch = clamp(
-      this.pitch - deltaY * LOOK_SENSITIVITY * 0.85,
-      PITCH_MIN,
-      PITCH_MAX,
+      this.pitch + deltaY * LOOK_SENSITIVITY * 0.7,
+      TP_PITCH_MIN,
+      TP_PITCH_MAX,
     );
   }
 
@@ -198,9 +189,6 @@ export class WorldClient {
     const normalized = key.toLowerCase();
     if (pressed) {
       this.keys.add(normalized);
-      if (MOVEMENT_KEYS.has(normalized)) {
-        this.moveTarget = null;
-      }
     } else {
       this.keys.delete(normalized);
     }
@@ -208,17 +196,6 @@ export class WorldClient {
 
   clearKeys(): void {
     this.keys.clear();
-  }
-
-  setMoveTarget(x: number, z: number): void {
-    if (this.cameraMode !== "isometric") {
-      return;
-    }
-    this.keys.clear();
-    this.moveTarget = {
-      x: clamp(x, -WORLD_HALF + 1, WORLD_HALF - 1),
-      z: clamp(z, -WORLD_HALF + 1, WORLD_HALF - 1),
-    };
   }
 
   /** Se llama una vez por frame dentro del Canvas. */
@@ -260,9 +237,6 @@ export class WorldClient {
       if (Math.hypot(dx, dz) > 1.1) {
         local.x = local.serverX;
         local.z = local.serverZ;
-        if (this.cameraMode === "isometric") {
-          local.rot = local.serverRot;
-        }
       }
     }
 
@@ -297,7 +271,7 @@ export class WorldClient {
 
     if (id === this.localId && !this.yawInitialized) {
       this.yaw = Math.atan2(Math.sin(player.rot), Math.cos(player.rot));
-      this.pitch = 0;
+      this.pitch = this.cameraMode === "first-person" ? 0 : 0.2;
       this.yawInitialized = true;
     }
 
@@ -346,26 +320,9 @@ export class WorldClient {
     let z = 0;
 
     if (Math.abs(forward) > 0.01 || Math.abs(right) > 0.01) {
-      if (this.cameraMode === "first-person") {
-        // Movimiento relativo a la dirección de la cámara.
-        x = forward * Math.sin(this.yaw) - right * Math.cos(this.yaw);
-        z = forward * Math.cos(this.yaw) + right * Math.sin(this.yaw);
-      } else {
-        // Base fija de la cámara isométrica (+x, +z).
-        const inv = Math.SQRT1_2;
-        x = (right - forward) * inv;
-        z = (-right - forward) * inv;
-      }
-    } else if (this.moveTarget && local) {
-      const dx = this.moveTarget.x - local.x;
-      const dz = this.moveTarget.z - local.z;
-      const distance = Math.hypot(dx, dz);
-      if (distance < 0.35) {
-        this.moveTarget = null;
-      } else {
-        x = dx / distance;
-        z = dz / distance;
-      }
+      // Movimiento relativo a la dirección de la cámara (FP y TP).
+      x = forward * Math.sin(this.yaw) - right * Math.cos(this.yaw);
+      z = forward * Math.cos(this.yaw) + right * Math.sin(this.yaw);
     }
 
     const length = Math.hypot(x, z);
@@ -376,7 +333,7 @@ export class WorldClient {
 
     const moving = Math.hypot(x, z) > 0.01;
     let yaw = this.yaw;
-    if (this.cameraMode === "isometric") {
+    if (this.cameraMode === "third-person") {
       yaw = moving ? Math.atan2(x, z) : (local?.rot ?? this.yaw);
     }
 

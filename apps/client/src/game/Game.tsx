@@ -7,9 +7,13 @@ import type { WorldClient } from "../net/world-client";
 import { exitPointerLockSafe, requestPointerLockSafe } from "../pointer-lock";
 import { Hud } from "../ui/Hud";
 import { CameraRig } from "./CameraRig";
-import { FirstPersonControls } from "./FirstPersonControls";
 import { Forest } from "./Forest";
+import { Hills } from "./Hills";
+import { Meadow } from "./Meadow";
+import { MouseLookControls } from "./MouseLookControls";
 import { Players } from "./Players";
+import { SkyDome } from "./SkyDome";
+import { SunLight } from "./SunLight";
 import { Terrain } from "./Terrain";
 
 const ZONE = getZone("bosque-digital");
@@ -37,23 +41,20 @@ function Scene({ client }: { client: WorldClient }) {
   return (
     <>
       <color attach="background" args={[ZONE.groundColor]} />
-      <fog attach="fog" args={[ZONE.fogColor, 52, 118]} />
+      <fog attach="fog" args={["#b7d3bf", 60, 220]} />
+      <SkyDome />
 
-      <ambientLight intensity={1.15} />
-      <hemisphereLight args={["#e8fff2", "#24402f", 0.7]} />
-      <directionalLight position={[18, 30, 12]} intensity={2.1} />
+      <ambientLight intensity={0.75} />
+      <hemisphereLight args={["#d7ecff", "#2d4a33", 0.65]} />
+      <SunLight client={client} />
 
-      <Terrain
-        onPick={(x, z) => {
-          if (client.cameraMode === "isometric") {
-            client.setMoveTarget(x, z);
-          }
-        }}
-      />
+      <Terrain />
+      <Meadow />
       <Forest />
+      <Hills />
       <Players client={client} />
       <CameraRig client={client} />
-      <FirstPersonControls client={client} />
+      <MouseLookControls client={client} />
     </>
   );
 }
@@ -117,10 +118,10 @@ export function Game({
   return (
     <div className="game-root">
       <Canvas
-        flat
+        shadows
         dpr={[1, 1.8]}
         gl={{ antialias: true, powerPreference: "high-performance" }}
-        camera={{ position: [14, 25, 14], fov: 34, near: 0.1, far: 240 }}
+        camera={{ position: [0, 3, -5], fov: 55, near: 0.1, far: 600 }}
       >
         <Simulation client={client} />
         <Scene client={client} />

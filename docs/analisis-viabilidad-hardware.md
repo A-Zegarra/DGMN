@@ -111,18 +111,22 @@ El 3D no es el problema. Lo pesado son las **texturas grandes, las sombras en ti
 
 ### 4.3 Recomendación
 
-**3D low-poly estilizado con cámara isométrica**, estética de diorama/juguete:
+**3D low-poly estilizado con cámara en tercera persona**, estética de diorama
+natural:
 
 - **Modelos:** 1 500–3 000 triángulos por Digimon, un solo material, color plano o paleta de 256 px.
 - **Mundo:** terreno de una malla con colores por vértice, props de 50–500 triángulos instanciados.
 - **Sin sombras en tiempo real:** círculo oscuro bajo cada criatura.
 - **Niebla y distancia de dibujo de 50–70 m.**
 - **Menos de 150 draw calls** y 30–40 personajes visibles.
-- **Cámara isométrica a 45°** con zoom; opción de rotar.
+- **Cámara en tercera persona** con órbita y primera persona con `V`.
 - **Controles:** WASD + clic para mover, joystick táctil en Android. Sin capturar el puntero.
 - **Objetivo:** 60 fps en PC, 30 fps en móvil de gama media a 720p.
 
-**Por qué:** reutiliza los modelos 3D oficiales que ya tienes, se siente como un MMO real y es lo bastante liviano para Iris Xe y teléfonos. La cámara isométrica es más cómoda en navegador que la cámara tipo WoW y además oculta el bajo detalle.
+**Por qué:** reutiliza los modelos 3D oficiales que ya tienes, se siente como un
+MMO real y es lo bastante liviano para Iris Xe y teléfonos. La tercera persona
+evita el aspecto de tablero de la isométrica y permite ver al Digimon y al
+entorno con más profundidad.
 
 **Alternativa 2.5D:** si prefieres el mínimo peso posible o tienes arte 2D, el estilo Ragnarok Online (sprites animados sobre terreno 3D) es aún más liviano, pero exige convertir cada modelo 3D a sprites en 8 direcciones. Solo conviene si el arte 2D ya existe.
 
@@ -228,7 +232,7 @@ El uso interno y local reduce el riesgo, pero conviene diseñar desde el inicio 
 | Semana | Entregable |
 |---|---|
 | 1 | Monorepo, servidor Colyseus, sala de prueba, movimiento con cápsulas |
-| 2 | Cámara isométrica, mapa del bosque, dos jugadores por Tailscale |
+| 2 | Cámara en tercera persona, mapa del bosque, dos jugadores por Tailscale |
 | 3 | Compañero que sigue, enemigos salvajes, aggro y persecución |
 | 4 | Combate por turnos, daño validado en servidor, experiencia |
 | 5 | Evolución, guardado SQLite, UI básica, controles táctiles |
@@ -241,7 +245,8 @@ El arte propio o la conversión de modelos oficiales puede sumar 2–4 semanas a
 ## 11. Decisiones tomadas y pendientes
 
 **Tomadas:**
-1. **Estilo visual:** 3D low-poly isométrico con materiales planos.
+1. **Estilo visual:** 3D low-poly con cámara en tercera persona, materiales con
+   textura, sombras suaves y cielo degradado.
 2. **Assets:** todavía no hay modelos; se usan primitivas de color y la
    arquitectura queda lista para un *content pack* oficial privado.
 3. **Desarrollo:** Windows para cliente y arte; HP Ubuntu como servidor de
@@ -270,23 +275,26 @@ El arte propio o la conversión de modelos oficiales puede sumar 2–4 semanas a
 - Cliente React 19 + Vite 8 + React Three Fiber 9 + Three.js 186.
 - **Tamer y Digimon separados**: el compañero deambula en un radio cercano, se
   detiene a mirar al tamer y no consume estado de red adicional.
-- **Primera persona** con captura de ratón, mirada con pitch y **vista
-  isométrica** con `V`.
-- **Joystick virtual visible** en primera persona desde móvil y **zona táctil
-  dedicada** para mirar, independiente del joystick.
+- **Primera y tercera persona** con `V`: tercera persona con órbita de cámara
+  y primera persona con captura de ratón.
+- **Joystick virtual visible** en móvil y **zona táctil dedicada** para mirar,
+  independiente del joystick.
 - **Botón de pantalla completa** que intenta bloquear la orientación horizontal
   en Android.
 - **Modelos low-poly propios** para Agumon, Gabumon y Patamon, con detalles
   (ojos con brillo, dientes, lengua, pelaje, cuernos, orejas y garras), variantes
   para Greymon, Garurumon y Angemon, y un modelo genérico para el resto.
-- Terreno low-poly facetado, árboles/rocas/arbustos instanciados, plaza central
-  y aparición separada de jugadores.
+- **Iluminación y entorno más detallados**: sombras suaves, cielo degradado,
+  sol dinámico que sigue al jugador, terreno de 400 × 400 m con texturas
+  procedurales de césped y tierra, matas de hierba, flores y colinas lejanas.
+- Árboles/rocas/arbustos instanciados, plaza central y aparición separada de
+  jugadores.
 - Predicción local, reconciliación, interpolación de jugadores remotos y
-  etiquetas de nombre con sprites de canvas.
+  etiquetas de nombre con sprites de canvas escaladas por distancia.
 - Selección de Agumon, Gabumon o Patamon; datos de estadísticas y evoluciones.
 - Chat de zona con límite de frecuencia, lista de jugadores y desconexión limpia.
 - UI responsive con chat colapsable en móvil.
-- Build de producción correcto (1.34 MB de JS, 376 KB gzip) servido desde el HP.
+- Build de producción correcto servido desde el HP.
 - **Túnel dedicado de Cloudflare** (`digiworld`) con servicio systemd propio,
   separado del túnel de producción, y `noindex` en el cliente.
 
@@ -295,14 +303,15 @@ El arte propio o la conversión de modelos oficiales puede sumar 2–4 semanas a
 | Prueba | Resultado |
 |---|---|
 | Movimiento con WASD | ~4.2 m/s, corregido por el servidor |
-| Primera persona + ratón | Movimiento relativo a la cámara y yaw sincronizado |
-| Vista isométrica con `V` | Tamer y compañero visibles |
-| Clic para moverse en isométrica | Funciona; el jugador camina al punto |
-| Joystick y mirada táctil | Movimiento y giro verificados antes y después de usar el joystick |
+| Tercera persona + ratón | Cámara detrás del tamer y órbita con el ratón |
+| Primera persona con `V` | Movimiento relativo a la cámara y yaw sincronizado |
 | Compañero libre | Deambula alrededor del tamer y se detiene a mirarlo |
+| Cámara y compañero | No se queda entre cámara y tamer en tercera persona |
+| Joystick y mirada táctil | Movimiento y giro verificados antes y después de usar el joystick |
 | Pantalla completa | Botón presente; el bloqueo de orientación depende del navegador |
 | Tres jugadores en el mismo mundo | Visibles, separados y sincronizados |
 | Cuatro jugadores con modelos | 60 FPS, modelos Agumon, Gabumon y Patamon |
+| Sombras, cielo y terreno | Render sin errores; sombras y texturas visibles |
 | Chat entre jugadores | Recibido en los clientes |
 | Desconexión | El jugador desaparece y se anuncia en el chat |
 | Cliente estático en el HP | Conectado por Tailscale en el puerto 8080 |

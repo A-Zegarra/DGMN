@@ -1,82 +1,122 @@
 import { useEffect, useMemo } from "react";
 import * as THREE from "three";
 
-const PALETTE = ["#3d7a4f", "#356e47", "#448455", "#2f6540", "#3a744b"];
-
-function createGroundGeometry(): THREE.BufferGeometry {
-  const plane = new THREE.PlaneGeometry(120, 120, 32, 32);
-  plane.rotateX(-Math.PI / 2);
-
-  const geometry = plane.toNonIndexed();
-  plane.dispose();
-
-  const positions = geometry.attributes.position;
-  const colors = new Float32Array(positions.count * 3);
-  const color = new THREE.Color();
-
-  for (let i = 0; i < positions.count; i += 3) {
-    const x =
-      (positions.getX(i) + positions.getX(i + 1) + positions.getX(i + 2)) / 3;
-    const z =
-      (positions.getZ(i) + positions.getZ(i + 1) + positions.getZ(i + 2)) / 3;
-    const noise = Math.abs(Math.sin(x * 12.9898 + z * 78.233) * 43758.5453) % 1;
-    color.set(PALETTE[Math.floor(noise * PALETTE.length)] ?? PALETTE[0]!);
-
-    for (let vertex = 0; vertex < 3; vertex += 1) {
-      const offset = (i + vertex) * 3;
-      colors[offset] = color.r;
-      colors[offset + 1] = color.g;
-      colors[offset + 2] = color.b;
-    }
+function createGrassTexture(): THREE.CanvasTexture {
+  const canvas = document.createElement("canvas");
+  canvas.width = 256;
+  canvas.height = 256;
+  const context = canvas.getContext("2d");
+  if (!context) {
+    throw new Error("No se pudo crear la textura de césped");
   }
 
-  geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
-  geometry.computeVertexNormals();
+  context.fillStyle = "#4d8054";
+  context.fillRect(0, 0, 256, 256);
+
+  for (let index = 0; index < 2600; index += 1) {
+    const x = Math.random() * 256;
+    const y = Math.random() * 256;
+    const length = 2 + Math.random() * 7;
+    const shade = Math.random();
+    context.strokeStyle =
+      shade < 0.34
+        ? "rgba(30, 70, 38, 0.28)"
+        : shade < 0.68
+          ? "rgba(110, 150, 95, 0.25)"
+          : "rgba(68, 110, 62, 0.3)";
+    context.lineWidth = 0.7 + Math.random();
+    context.beginPath();
+    context.moveTo(x, y);
+    context.lineTo(x + (Math.random() - 0.5) * 2, y - length);
+    context.stroke();
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat.set(40, 40);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 4;
+  return texture;
+}
+
+function createDirtTexture(): THREE.CanvasTexture {
+  const canvas = document.createElement("canvas");
+  canvas.width = 256;
+  canvas.height = 256;
+  const context = canvas.getContext("2d");
+  if (!context) {
+    throw new Error("No se pudo crear la textura de tierra");
+  }
+
+  context.fillStyle = "#a9895f";
+  context.fillRect(0, 0, 256, 256);
+
+  for (let index = 0; index < 1400; index += 1) {
+    const x = Math.random() * 256;
+    const y = Math.random() * 256;
+    const radius = 0.7 + Math.random() * 2.4;
+    context.fillStyle =
+      Math.random() < 0.5
+        ? "rgba(88, 65, 42, 0.22)"
+        : "rgba(202, 174, 128, 0.22)";
+    context.beginPath();
+    context.ellipse(x, y, radius, radius * 0.55, 0, 0, Math.PI * 2);
+    context.fill();
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat.set(5, 5);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 4;
+  return texture;
+}
+
+function createGroundGeometry(): THREE.BufferGeometry {
+  const geometry = new THREE.PlaneGeometry(400, 400, 1, 1);
+  geometry.rotateX(-Math.PI / 2);
   return geometry;
 }
 
-export function Terrain({ onPick }: { onPick: (x: number, z: number) => void }) {
+export function Terrain() {
   const geometry = useMemo(createGroundGeometry, []);
+  const grassTexture = useMemo(createGrassTexture, []);
+  const dirtTexture = useMemo(createDirtTexture, []);
 
   useEffect(() => {
-    return () => geometry.dispose();
-  }, [geometry]);
+    return () => {
+      geometry.dispose();
+      grassTexture.dispose();
+      dirtTexture.dispose();
+    };
+  }, [geometry, grassTexture, dirtTexture]);
 
   return (
     <group>
-      <mesh
-        geometry={geometry}
-        onPointerDown={(event) => {
-          event.stopPropagation();
-          onPick(event.point.x, event.point.z);
-        }}
-      >
-        <meshStandardMaterial
-          vertexColors
-          flatShading
-          roughness={1}
-          metalness={0}
-        />
+      <mesh geometry={geometry} receiveShadow>
+        <meshStandardMaterial map={grassTexture} roughness={1} metalness={0} />
       </mesh>
 
-      <mesh rotation-x={-Math.PI / 2} position-y={0.02}>
+      <mesh rotation-x={-Math.PI / 2} position-y={0.02} receiveShadow>
         <planeGeometry args={[6, 112]} />
-        <meshStandardMaterial color="#a9895f" roughness={1} />
+        <meshStandardMaterial map={dirtTexture} roughness={1} />
       </mesh>
 
-      <mesh rotation-x={-Math.PI / 2} position-y={0.025}>
+      <mesh rotation-x={-Math.PI / 2} position-y={0.025} receiveShadow>
         <planeGeometry args={[112, 6]} />
-        <meshStandardMaterial color="#a9895f" roughness={1} />
+        <meshStandardMaterial map={dirtTexture} roughness={1} />
       </mesh>
 
-      <mesh rotation-x={-Math.PI / 2} position-y={0.035}>
+      <mesh rotation-x={-Math.PI / 2} position-y={0.035} receiveShadow>
         <circleGeometry args={[9.2, 48]} />
-        <meshStandardMaterial color="#b99a6b" roughness={1} />
+        <meshStandardMaterial map={dirtTexture} roughness={1} />
       </mesh>
 
-      <mesh rotation-x={-Math.PI / 2} position-y={0.045}>
+      <mesh rotation-x={-Math.PI / 2} position-y={0.045} receiveShadow>
         <ringGeometry args={[9.2, 9.7, 48]} />
-        <meshStandardMaterial color="#8a6a45" roughness={1} />
+        <meshStandardMaterial color="#7a5c3b" roughness={1} />
       </mesh>
     </group>
   );

@@ -3,16 +3,13 @@ import { useEffect } from "react";
 
 import type { WorldClient } from "../net/world-client";
 
-export function FirstPersonControls({ client }: { client: WorldClient }) {
+export function MouseLookControls({ client }: { client: WorldClient }) {
   const { gl } = useThree();
 
   useEffect(() => {
     const canvas = gl.domElement;
 
     const handleClick = () => {
-      if (client.cameraMode !== "first-person") {
-        return;
-      }
       if (document.pointerLockElement !== canvas) {
         const request = canvas.requestPointerLock();
         if (request && typeof request.catch === "function") {
@@ -24,10 +21,7 @@ export function FirstPersonControls({ client }: { client: WorldClient }) {
     };
 
     const handleMouseMove = (event: MouseEvent) => {
-      if (
-        document.pointerLockElement === canvas &&
-        client.cameraMode === "first-person"
-      ) {
+      if (document.pointerLockElement === canvas) {
         client.addLook(event.movementX, event.movementY);
       }
     };

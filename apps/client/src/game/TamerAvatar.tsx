@@ -1,5 +1,5 @@
 import { useFrame } from "@react-three/fiber";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import * as THREE from "three";
 
 import { SPECIES } from "@digiworld/content";
@@ -27,9 +27,11 @@ function jacketFor(name: string): string {
 export function TamerAvatar({
   view,
   isLocal,
+  showTag = true,
 }: {
   view: PlayerView;
   isLocal: boolean;
+  showTag?: boolean;
 }) {
   const group = useRef<THREE.Group>(null);
   const body = useRef<THREE.Group>(null);
@@ -43,6 +45,14 @@ export function TamerAvatar({
   const skin = "#e7b48b";
   const pants = "#26303d";
   const hair = "#1b2430";
+
+  useEffect(() => {
+    group.current?.traverse((object) => {
+      if (object instanceof THREE.Mesh) {
+        object.castShadow = true;
+      }
+    });
+  }, []);
 
   useFrame((state) => {
     const root = group.current;
@@ -184,13 +194,15 @@ export function TamerAvatar({
         </mesh>
       </group>
 
-      <NameTag
-        title={view.name}
-        subtitle="Domador"
-        isLocal={isLocal}
-        y={2.18}
-        scale={1}
-      />
+      {showTag && (
+        <NameTag
+          title={view.name}
+          subtitle="Domador"
+          isLocal={isLocal}
+          y={2.18}
+          scale={1}
+        />
+      )}
     </group>
   );
 }

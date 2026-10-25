@@ -15,12 +15,10 @@ export function PlayerEntity({
 
   return (
     <>
-      {!hideTamer && <TamerAvatar view={view} isLocal={isLocal} />}
-      <PartnerAvatar
-        view={view}
-        isLocal={isLocal}
-        showTag={!hideTamer}
-      />
+      {!hideTamer && (
+        <TamerAvatar view={view} isLocal={isLocal} showTag={!isLocal} />
+      )}
+      <PartnerAvatar view={view} isLocal={isLocal} showTag={!isLocal} />
     </>
   );
 }

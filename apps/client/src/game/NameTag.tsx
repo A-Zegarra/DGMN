@@ -1,4 +1,5 @@
-import { useEffect, useMemo } from "react";
+import { useFrame } from "@react-three/fiber";
+import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 
 function roundRect(
@@ -81,13 +82,28 @@ export function NameTag({
     () => createNameTexture(title, subtitle, isLocal),
     [title, subtitle, isLocal],
   );
+  const sprite = useRef<THREE.Sprite>(null);
+  const worldPosition = useRef(new THREE.Vector3());
 
   useEffect(() => {
     return () => texture.dispose();
   }, [texture]);
 
+  useFrame(({ camera }) => {
+    const object = sprite.current;
+    if (!object) {
+      return;
+    }
+
+    object.getWorldPosition(worldPosition.current);
+    const distance = camera.position.distanceTo(worldPosition.current);
+    const width = THREE.MathUtils.clamp(distance * 0.11, 0.65, 2.2) * scale;
+    object.scale.set(width, width * 0.25, 1);
+  });
+
   return (
     <sprite
+      ref={sprite}
       position={[0, y, 0]}
       scale={[2.7 * scale, 0.675 * scale, 1]}
       renderOrder={20}

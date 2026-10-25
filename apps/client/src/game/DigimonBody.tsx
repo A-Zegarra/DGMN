@@ -1,3 +1,6 @@
+import { useEffect, useRef } from "react";
+import * as THREE from "three";
+
 import { SPECIES } from "@digiworld/content";
 
 import { DigimonModel } from "./models/DigimonModel";
@@ -15,6 +18,15 @@ export function DigimonBody({
 }) {
   const species = SPECIES[speciesId] ?? SPECIES.agumon!;
   const scale = species.scale;
+  const modelRoot = useRef<THREE.Group>(null);
+
+  useEffect(() => {
+    modelRoot.current?.traverse((object) => {
+      if (object instanceof THREE.Mesh) {
+        object.castShadow = true;
+      }
+    });
+  }, []);
 
   return (
     <group>
@@ -40,7 +52,7 @@ export function DigimonBody({
         />
       </mesh>
 
-      <group scale={scale}>
+      <group ref={modelRoot} scale={scale}>
         <DigimonModel
           speciesId={speciesId}
           moving={moving}

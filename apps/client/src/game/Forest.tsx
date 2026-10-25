@@ -195,8 +195,8 @@ function buildForest(): ForestMeshes {
       mesh.instanceColor.needsUpdate = true;
     }
     mesh.frustumCulled = false;
-    mesh.castShadow = false;
-    mesh.receiveShadow = false;
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
   }
 
   return { trunks, foliage, rocks: rocksMesh, bushes: bushesMesh };
