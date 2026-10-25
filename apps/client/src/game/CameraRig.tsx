@@ -4,7 +4,7 @@ import * as THREE from "three";
 
 import type { WorldClient } from "../net/world-client";
 
-const CAMERA_OFFSET = new THREE.Vector3(20, 24, 20);
+const CAMERA_OFFSET = new THREE.Vector3(18, 30, 18);
 const LOOK_TARGET = new THREE.Vector3();
 const DESIRED_POSITION = new THREE.Vector3();
 

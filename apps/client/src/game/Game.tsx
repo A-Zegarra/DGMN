@@ -98,7 +98,7 @@ export function Game({
         flat
         dpr={[1, 1.8]}
         gl={{ antialias: true, powerPreference: "high-performance" }}
-        camera={{ position: [20, 24, 20], fov: 30, near: 0.1, far: 240 }}
+        camera={{ position: [18, 30, 18], fov: 34, near: 0.1, far: 240 }}
       >
         <Simulation client={client} />
         <Scene client={client} />

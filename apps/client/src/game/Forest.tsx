@@ -41,7 +41,7 @@ function buildTrees(random: () => number): TreeTransform[] {
   while (trees.length < 68 && attempts < 600) {
     attempts += 1;
     const angle = random() * Math.PI * 2;
-    const radius = 11 + random() * 43;
+    const radius = 13 + random() * 41;
     const x = Math.cos(angle) * radius;
     const z = Math.sin(angle) * radius;
 
