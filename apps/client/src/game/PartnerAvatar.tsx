@@ -24,10 +24,12 @@ export function PartnerAvatar({
   view,
   isLocal,
   showTag = true,
+  onSelect,
 }: {
   view: PlayerView;
   isLocal: boolean;
   showTag?: boolean;
+  onSelect?: () => void;
 }) {
   const group = useRef<THREE.Group>(null);
   const initialized = useRef(false);
@@ -204,7 +206,16 @@ export function PartnerAvatar({
   const tagScale = Math.max(1, species.scale * 0.95) * 0.85;
 
   return (
-    <group ref={group}>
+    <group
+      ref={group}
+      onPointerDown={(event) => {
+        if (!onSelect) {
+          return;
+        }
+        event.stopPropagation();
+        onSelect();
+      }}
+    >
       <DigimonBody
         speciesId={view.species}
         moving={partnerMoving}

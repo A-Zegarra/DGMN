@@ -1,7 +1,19 @@
 import { Callbacks, Client, type Room } from "@colyseus/sdk";
 
+import { getAbilitiesForSpecies, type Ability } from "@digiworld/content";
 import { RUN_SPEED, WALK_SPEED, WORLD_HALF } from "@digiworld/shared/constants";
-import type { ChatMessage } from "@digiworld/shared/messages";
+import type {
+  AbilityErrorPayload,
+  AbilityUsedPayload,
+  AutoAttackPayload,
+  ChatMessage,
+  DuelDeclinedPayload,
+  DuelEndPayload,
+  DuelErrorPayload,
+  DuelRequestPayload,
+  DuelRequestSentPayload,
+  DuelStartPayload,
+} from "@digiworld/shared/messages";
 import type { PlayerState, WorldState } from "@digiworld/shared/schema";
 
 const INPUT_SEND_INTERVAL = 50;
@@ -20,6 +32,14 @@ export interface PlayerView {
   level: number;
   moving: boolean;
   running: boolean;
+  hp: number;
+  maxHp: number;
+  ep: number;
+  maxEp: number;
+  inCombat: boolean;
+  duelOpponent: string;
+  duelWins: number;
+  duelLosses: number;
 
   /** Posición autoritativa del servidor. */
   serverX: number;
@@ -30,6 +50,31 @@ export interface PlayerView {
   x: number;
   z: number;
   rot: number;
+}
+
+export interface DuelResult {
+  won: boolean;
+  opponentName: string;
+}
+
+interface CombatError {
+  text: string;
+  at: number;
+}
+
+export type CombatFeedKind =
+  | "damage-out"
+  | "damage-in"
+  | "ability-out"
+  | "ability-in"
+  | "heal";
+
+export interface CombatFeedEntry {
+  id: number;
+  kind: CombatFeedKind;
+  amount: number;
+  label: string;
+  at: number;
 }
 
 interface MoveInput {
@@ -57,12 +102,26 @@ export class WorldClient {
   yaw = 0;
   pitch = 0.2;
 
+  targetId: string | null = null;
+  incomingDuel: DuelRequestPayload | null = null;
+  pendingDuelTargetName: string | null = null;
+  duelResult: DuelResult | null = null;
+  lastError: CombatError | null = null;
+  readonly abilityCooldowns = new Map<string, number>();
+  readonly combatFeed: CombatFeedEntry[] = [];
+
   onDisconnect: (() => void) | null = null;
 
   private readonly callbacks: ReturnType<typeof Callbacks.get<WorldState>>;
   private readonly keys = new Set<string>();
   private readonly rosterListeners = new Set<() => void>();
   private readonly chatListeners = new Set<(message: ChatMessage) => void>();
+  private readonly combatListeners = new Set<() => void>();
+  private incomingDuelTimer: ReturnType<typeof setTimeout> | null = null;
+  private duelResultTimer: ReturnType<typeof setTimeout> | null = null;
+  private errorTimer: ReturnType<typeof setTimeout> | null = null;
+  private feedSequence = 0;
+  private lastVitalsNotifyAt = 0;
 
   private touchMove = { x: 0, y: 0 };
   private lastInputSignature = "";
@@ -82,13 +141,129 @@ export class WorldClient {
 
     this.callbacks.onRemove("players", (_player: PlayerState, id: string) => {
       this.players.delete(id);
+      if (this.targetId === id) {
+        this.targetId = null;
+      }
       this.emitRoster();
+      this.emitCombat();
     });
 
     room.onMessage("chat", (message: ChatMessage) => {
       for (const listener of this.chatListeners) {
         listener(message);
       }
+    });
+
+    room.onMessage("duel_request", (message: DuelRequestPayload) => {
+      this.clearIncomingDuelTimer();
+      this.incomingDuel = message;
+      this.lastError = null;
+      this.emitCombat();
+      this.incomingDuelTimer = setTimeout(
+        () => {
+          if (this.incomingDuel?.fromId === message.fromId) {
+            this.incomingDuel = null;
+            this.emitCombat();
+          }
+        },
+        Math.max(3000, message.at + 15000 - Date.now()),
+      );
+    });
+
+    room.onMessage("duel_request_sent", (message: DuelRequestSentPayload) => {
+      this.pendingDuelTargetName = message.targetName;
+      this.emitCombat();
+    });
+
+    room.onMessage("duel_declined", (message: DuelDeclinedPayload) => {
+      this.pendingDuelTargetName = null;
+      this.setError(`${message.byName} rechazó el duelo.`);
+    });
+
+    room.onMessage("duel_error", (message: DuelErrorPayload) => {
+      this.pendingDuelTargetName = null;
+      this.setError(message.reason);
+    });
+
+    room.onMessage("duel_start", (message: DuelStartPayload) => {
+      this.clearIncomingDuelTimer();
+      this.incomingDuel = null;
+      this.pendingDuelTargetName = null;
+      this.duelResult = null;
+      this.targetId = message.opponentId;
+      this.abilityCooldowns.clear();
+      this.combatFeed.length = 0;
+      this.emitCombat();
+    });
+
+    room.onMessage("duel_end", (message: DuelEndPayload) => {
+      const localWon = message.winnerId === this.localId;
+      this.duelResult = {
+        won: localWon,
+        opponentName: localWon ? message.loserName : message.winnerName,
+      };
+      this.pendingDuelTargetName = null;
+      this.targetId = null;
+      this.abilityCooldowns.clear();
+      this.emitCombat();
+      if (this.duelResultTimer) {
+        clearTimeout(this.duelResultTimer);
+      }
+      this.duelResultTimer = setTimeout(() => {
+        this.duelResult = null;
+        this.emitCombat();
+      }, 5000);
+    });
+
+    room.onMessage("ability_used", (message: AbilityUsedPayload) => {
+      if (message.casterId === this.localId) {
+        this.abilityCooldowns.set(
+          message.abilityId,
+          Date.now() + message.cooldownMs,
+        );
+        if (message.kind === "damage" || message.amount > 0) {
+          this.pushFeed({
+            kind: message.kind === "heal" ? "heal" : "ability-out",
+            amount: message.amount,
+            label:
+              message.kind === "heal"
+                ? message.abilityName
+                : `${message.abilityName} → ${message.targetName}`,
+            at: Date.now(),
+          });
+        }
+      } else if (message.targetId === this.localId) {
+        this.pushFeed({
+          kind: "ability-in",
+          amount: message.amount,
+          label: `${message.casterName}: ${message.abilityName}`,
+          at: Date.now(),
+        });
+      }
+      this.emitCombat();
+    });
+
+    room.onMessage("auto_attack", (message: AutoAttackPayload) => {
+      if (message.attackerId === this.localId) {
+        this.pushFeed({
+          kind: "damage-out",
+          amount: message.amount,
+          label: `Golpe → ${message.targetName}`,
+          at: Date.now(),
+        });
+      } else if (message.targetId === this.localId) {
+        this.pushFeed({
+          kind: "damage-in",
+          amount: message.amount,
+          label: message.attackerName,
+          at: Date.now(),
+        });
+      }
+      this.emitCombat();
+    });
+
+    room.onMessage("ability_error", (message: AbilityErrorPayload) => {
+      this.setError(message.reason);
     });
 
     room.onLeave(() => {
@@ -141,6 +316,109 @@ export class WorldClient {
     return () => {
       this.chatListeners.delete(listener);
     };
+  }
+
+  subscribeCombat(listener: () => void): () => void {
+    this.combatListeners.add(listener);
+    listener();
+    return () => {
+      this.combatListeners.delete(listener);
+    };
+  }
+
+  getAbilities(): Ability[] {
+    const local = this.players.get(this.localId);
+    return local ? getAbilitiesForSpecies(local.species) : [];
+  }
+
+  getCooldownRemaining(abilityId: string): number {
+    return Math.max(0, (this.abilityCooldowns.get(abilityId) ?? 0) - Date.now());
+  }
+
+  useAbility(abilityId: string): void {
+    this.room.send("use_ability", { abilityId });
+  }
+
+  requestDuel(targetId: string): void {
+    const target = this.players.get(targetId);
+    if (!target) {
+      return;
+    }
+    this.pendingDuelTargetName = target.name;
+    this.room.send("duel_request", { targetId });
+    this.emitCombat();
+  }
+
+  respondDuel(accept: boolean): void {
+    const request = this.incomingDuel;
+    if (!request) {
+      return;
+    }
+    this.clearIncomingDuelTimer();
+    this.incomingDuel = null;
+    this.room.send("duel_response", {
+      fromId: request.fromId,
+      accept,
+    });
+    this.emitCombat();
+  }
+
+  forfeitDuel(): void {
+    this.room.send("duel_forfeit");
+  }
+
+  setTarget(targetId: string | null): void {
+    this.targetId =
+      targetId && targetId !== this.localId && this.players.has(targetId)
+        ? targetId
+        : null;
+    this.emitCombat();
+  }
+
+  cycleTarget(): void {
+    const local = this.players.get(this.localId);
+    if (!local) {
+      return;
+    }
+
+    const others = Array.from(this.players.values())
+      .filter((player) => player.id !== this.localId)
+      .sort(
+        (a, b) =>
+          Math.hypot(a.x - local.x, a.z - local.z) -
+          Math.hypot(b.x - local.x, b.z - local.z),
+      );
+
+    if (others.length === 0) {
+      this.targetId = null;
+      this.emitCombat();
+      return;
+    }
+
+    const currentIndex = others.findIndex(
+      (player) => player.id === this.targetId,
+    );
+    const next = others[(currentIndex + 1) % others.length] ?? others[0]!;
+    this.targetId = next.id;
+    this.emitCombat();
+  }
+
+  clearTarget(): void {
+    this.targetId = null;
+    this.emitCombat();
+  }
+
+  clearError(): void {
+    this.lastError = null;
+    this.emitCombat();
+  }
+
+  getCombatFeed(): CombatFeedEntry[] {
+    const cutoff = Date.now() - 7000;
+    while (this.combatFeed.length > 0 && this.combatFeed[0]!.at < cutoff) {
+      this.combatFeed.shift();
+    }
+    return this.combatFeed.slice();
   }
 
   toggleCameraMode(): CameraMode {
@@ -259,6 +537,14 @@ export class WorldClient {
       level: player.level,
       moving: player.moving,
       running: player.running,
+      hp: player.hp,
+      maxHp: player.maxHp,
+      ep: player.ep,
+      maxEp: player.maxEp,
+      inCombat: player.inCombat,
+      duelOpponent: player.duelOpponent,
+      duelWins: player.duelWins,
+      duelLosses: player.duelLosses,
       serverX: player.x,
       serverZ: player.z,
       serverRot: player.rot,
@@ -302,6 +588,42 @@ export class WorldClient {
     this.callbacks.listen(player, "name", (value: string) => {
       view.name = value;
       this.emitRoster();
+    });
+    this.callbacks.listen(player, "hp", (value: number) => {
+      view.hp = value;
+      this.notifyVitals(view.id);
+    });
+    this.callbacks.listen(player, "maxHp", (value: number) => {
+      view.maxHp = value;
+      this.notifyVitals(view.id);
+    });
+    this.callbacks.listen(player, "ep", (value: number) => {
+      view.ep = value;
+      this.notifyVitals(view.id);
+    });
+    this.callbacks.listen(player, "maxEp", (value: number) => {
+      view.maxEp = value;
+      this.notifyVitals(view.id);
+    });
+    this.callbacks.listen(player, "inCombat", (value: boolean) => {
+      view.inCombat = value;
+      if (view.id === this.localId) {
+        this.emitCombat();
+      }
+    });
+    this.callbacks.listen(player, "duelOpponent", (value: string) => {
+      view.duelOpponent = value;
+      if (view.id === this.localId) {
+        this.emitCombat();
+      }
+    });
+    this.callbacks.listen(player, "duelWins", (value: number) => {
+      view.duelWins = value;
+      this.notifyVitals(view.id);
+    });
+    this.callbacks.listen(player, "duelLosses", (value: number) => {
+      view.duelLosses = value;
+      this.notifyVitals(view.id);
     });
   }
 
@@ -371,6 +693,53 @@ export class WorldClient {
   private emitRoster(): void {
     for (const listener of this.rosterListeners) {
       listener();
+    }
+  }
+
+  private emitCombat(): void {
+    for (const listener of this.combatListeners) {
+      listener();
+    }
+  }
+
+  private pushFeed(entry: Omit<CombatFeedEntry, "id">): void {
+    this.combatFeed.push({ ...entry, id: this.feedSequence++ });
+    while (this.combatFeed.length > 7) {
+      this.combatFeed.shift();
+    }
+  }
+
+  private notifyVitals(id: string): void {
+    if (id !== this.localId) {
+      return;
+    }
+    const now = Date.now();
+    if (now - this.lastVitalsNotifyAt < 200) {
+      return;
+    }
+    this.lastVitalsNotifyAt = now;
+    this.emitCombat();
+  }
+
+  private setError(text: string): void {
+    const error: CombatError = { text, at: Date.now() };
+    this.lastError = error;
+    this.emitCombat();
+    if (this.errorTimer) {
+      clearTimeout(this.errorTimer);
+    }
+    this.errorTimer = setTimeout(() => {
+      if (this.lastError === error) {
+        this.lastError = null;
+        this.emitCombat();
+      }
+    }, 3000);
+  }
+
+  private clearIncomingDuelTimer(): void {
+    if (this.incomingDuelTimer) {
+      clearTimeout(this.incomingDuelTimer);
+      this.incomingDuelTimer = null;
     }
   }
 }

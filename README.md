@@ -3,7 +3,8 @@
 Prototipo interno de un MMORPG 3D ligero inspirado en Digimon, pensado para
 navegador y Android. La primera versión es una prueba técnica de mundo
 compartido: varios jugadores caminan por el Bosque Digital en tiempo real, eligen
-un compañero y conversan por chat.
+un compañero, conversan y se retan a duelos con habilidades, energía y ataques
+automáticos.
 
 > **Uso interno.** Los nombres y criaturas de Digimon pertenecen a sus
 > titulares. Este repositorio debe permanecer privado mientras use contenido
@@ -26,10 +27,15 @@ un compañero y conversan por chat.
 - [x] Terreno visual de 400 × 400 m con árboles, rocas y senderos instanciados.
 - [x] Selección de compañero: Agumon, Gabumon o Patamon.
 - [x] Chat de zona y lista de jugadores conectados.
+- [x] Combate PvP en tiempo real con duelos por invitación.
+- [x] HP, EP, regeneración, enfriamientos y 3 habilidades por especie.
+- [x] Autoataques cada 2 s cuando ambos Digimon están a menos de 6 m.
+- [x] Objetivos con `Tab` o clic, panel de rival y barras de vida/energía.
+- [x] Avisos de daño/curación, resultado del duelo y rendición.
 - [x] Desconexión limpia, aparición separada y actualización de jugadores.
 - [x] Cliente estático servido desde el HP y probado por Tailscale.
 - [x] Túnel público dedicado en Cloudflare, con `noindex`, separado de las apps existentes.
-- [ ] Combate, enemigos salvajes y evoluciones (siguiente etapa).
+- [ ] Enemigos salvajes, PvE y evoluciones (siguiente etapa).
 - [ ] Guardado persistente.
 - [ ] Prueba en un Android físico.
 
@@ -113,6 +119,9 @@ Vite escucha en `0.0.0.0`. Si usas el HP como servidor, su IP de Tailscale es
 | Cambiar vista | `V` o botón del HUD | Botón del HUD |
 | Pantalla completa | Botón **Pantalla** | Botón **Horizontal / Vertical** |
 | Correr | `Shift` | — |
+| Fijar objetivo | `Tab` o clic sobre un Digimon | Botón **Objetivo** |
+| Habilidades | `1`, `2`, `3` | Botones de habilidad |
+| Retar a duelo | Panel de objetivo → **Retar a duelo** | Igual |
 | Chat | `Enter` | Botón Chat |
 
 En tercera persona ves al tamer desde detrás y puedes orbitar la cámara. El
@@ -123,6 +132,37 @@ al girarte. La vista isométrica se retiró para evitar el aspecto de tablero.
 El botón de pantalla completa intenta bloquear la orientación horizontal en
 Android. En navegadores que no permiten el bloqueo (por ejemplo, Safari en
 iPhone), la pantalla completa puede funcionar pero la rotación queda manual.
+
+## Combate y duelos
+
+El combate es **PvP por duelos** y lo valida el servidor. No hay PvE todavía.
+
+1. Fija a otro domador con `Tab`, haciendo clic sobre su Digimon o con el botón
+   **Objetivo** en móvil.
+2. Pulsa **Retar a duelo**. Ambos deben estar a menos de **15 m**.
+3. El rival recibe la invitación y puede aceptar o rechazar. La solicitud caduca
+   a los 15 s.
+4. Al aceptar, ambos recuperan HP y EP y empieza el duelo.
+
+Reglas actuales:
+
+- Cada especie tiene **3 habilidades** propias, con coste de **EP**,
+  enfriamiento y alcance. Se usan con `1`–`3` o con la barra inferior.
+- Los **ataques básicos** son automáticos cada **2 s** si ambos están a menos de
+  **6 m**. El jugador solo decide movimiento, objetivo y habilidades.
+- El daño combina el poder de la habilidad con `ATK` del atacante y `DEF` del
+  defensor. Patamon y Angemon tienen una habilidad de curación.
+- El EP se regenera lentamente durante el duelo; fuera de combate también se
+  recupera HP.
+- Al llegar a **0 HP** termina el duelo. El ganador recupera toda su vida y
+  energía; el perdedor reaparece a los **3,5 s**. Se suman victorias y derrotas.
+- El botón **Rendirse** del panel de duelo entrega la victoria al rival.
+- El feed de la derecha (solo escritorio) muestra golpes automáticos,
+  habilidades recibidas y curaciones; el chat de zona conserva el historial.
+
+El servidor comprueba distancia, objetivo, EP, enfriamientos, estado de combate y
+HP. El cliente solo muestra el resultado y bloquea botones para evitar pulsaciones
+inválidas.
 
 ## Estructura
 
@@ -136,7 +176,7 @@ apps/
   server/            Colyseus 0.18
     src/rooms/       WorldRoom y estado autoritativo
 packages/
-  content/           Especies, estadísticas, evoluciones y zonas
+  content/           Especies, estadísticas, evoluciones, zonas y habilidades
   shared/            Esquema sincronizado, constantes y mensajes
 docs/                Diseño, análisis técnico y despliegue
 ```
@@ -151,6 +191,9 @@ docs/                Diseño, análisis técnico y despliegue
 - Los demás jugadores se interpolan a partir de la posición autoritativa.
 - El compañero no se sincroniza: cada cliente calcula su seguimiento a partir
   del movimiento del tamer, así que no consume ancho de banda extra.
+- El combate es autoritativo: el servidor valida invitaciones, distancia,
+  objetivos, EP, enfriamientos y autoataques, y aplica el daño. Los clientes
+  reciben eventos de golpe, habilidad y fin de duelo.
 - El estado se sincroniza con `@colyseus/schema` 5 y la API `schema()`.
 
 ## Scripts
@@ -166,9 +209,9 @@ docs/                Diseño, análisis técnico y despliegue
 ## Siguiente etapa
 
 1. Enemigos salvajes con patrulla, aggro y persecución.
-2. Combate por turnos validado en el servidor.
-3. Experiencia, afinidad y primera evolución.
-4. Guardado SQLite de nivel, especie e inventario.
+2. PvE con experiencia, botín y primera evolución.
+3. Más especies, habilidades y equilibrado de daño/curación.
+4. Guardado SQLite de nivel, especie, victorias y derrotas.
 5. Prueba en un Android real.
 6. Modelos GLB con animaciones esqueléticas.
 

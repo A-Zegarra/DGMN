@@ -28,10 +28,12 @@ export function TamerAvatar({
   view,
   isLocal,
   showTag = true,
+  onSelect,
 }: {
   view: PlayerView;
   isLocal: boolean;
   showTag?: boolean;
+  onSelect?: () => void;
 }) {
   const group = useRef<THREE.Group>(null);
   const body = useRef<THREE.Group>(null);
@@ -91,7 +93,16 @@ export function TamerAvatar({
   });
 
   return (
-    <group ref={group}>
+    <group
+      ref={group}
+      onPointerDown={(event) => {
+        if (!onSelect) {
+          return;
+        }
+        event.stopPropagation();
+        onSelect();
+      }}
+    >
       {isLocal && (
         <mesh rotation-x={-Math.PI / 2} position-y={0.03}>
           <ringGeometry args={[0.38, 0.5, 28]} />

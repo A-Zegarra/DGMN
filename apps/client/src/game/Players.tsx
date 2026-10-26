@@ -18,6 +18,7 @@ export function Players({ client }: { client: WorldClient }) {
           view={player}
           isLocal={player.id === client.localId}
           cameraMode={client.cameraMode}
+          onSelect={() => client.setTarget(player.id)}
         />
       ))}
     </>

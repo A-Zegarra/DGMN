@@ -79,6 +79,19 @@ export function Game({
       }
 
       const key = event.key.toLowerCase();
+      if (key === "tab") {
+        event.preventDefault();
+        client.cycleTarget();
+        return;
+      }
+      if (key === "1" || key === "2" || key === "3") {
+        const ability = client.getAbilities()[Number(key) - 1];
+        if (ability) {
+          event.preventDefault();
+          client.useAbility(ability.id);
+        }
+        return;
+      }
       if (key === "v") {
         event.preventDefault();
         const nextMode = client.toggleCameraMode();

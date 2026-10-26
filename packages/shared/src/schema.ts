@@ -17,11 +17,21 @@ export const PlayerState = schema(
     running: t.boolean().default(false),
     level: t.uint8().default(1),
 
+    hp: t.number().default(100),
+    maxHp: t.number().default(100),
+    ep: t.number().default(100),
+    maxEp: t.number().default(100),
+    inCombat: t.boolean().default(false),
+    duelOpponent: t.string().default(""),
+    duelWins: t.uint16().default(0),
+    duelLosses: t.uint16().default(0),
+
     inputX: t.number().noSync().default(0),
     inputZ: t.number().noSync().default(0),
     inputRunning: t.boolean().noSync().default(false),
     lastInputAt: t.number().noSync().default(0),
     lastYawAt: t.number().noSync().default(0),
+    respawnAt: t.number().noSync().default(0),
   },
   "PlayerState",
 );

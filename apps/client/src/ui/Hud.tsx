@@ -5,6 +5,7 @@ import { SPECIES } from "@digiworld/content";
 import type { WorldClient } from "../net/world-client";
 import { requestPointerLockSafe } from "../pointer-lock";
 import { ChatPanel } from "./ChatPanel";
+import { CombatHud, VitalBars } from "./CombatHud";
 import { TouchLookArea } from "./TouchLookArea";
 import { VirtualJoystick } from "./VirtualJoystick";
 
@@ -16,6 +17,7 @@ export function Hud({
   onExit: () => void;
 }) {
   const [, bumpRoster] = useReducer((value: number) => value + 1, 0);
+  const [, bumpCombat] = useReducer((value: number) => value + 1, 0);
   const [pointerLocked, setPointerLocked] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [isTouch, setIsTouch] = useState(() =>
@@ -28,6 +30,10 @@ export function Hud({
 
   useEffect(() => {
     return client.subscribeRoster(() => bumpRoster());
+  }, [client]);
+
+  useEffect(() => {
+    return client.subscribeCombat(() => bumpCombat());
   }, [client]);
 
   useEffect(() => {
@@ -70,6 +76,7 @@ export function Hud({
   const species = local ? SPECIES[local.species] : undefined;
   const isFirstPerson = client.cameraMode === "first-person";
   const isMobile = isTouch || isNarrow;
+  const hasCombatPanel = Boolean(local?.inCombat || client.targetId);
 
   const roster = players
     .slice()
@@ -136,7 +143,7 @@ export function Hud({
       : "Pantalla";
 
   return (
-    <div className="hud">
+    <div className={`hud ${hasCombatPanel ? "has-combat" : ""}`}>
       {isMobile && <TouchLookArea client={client} />}
       {isFirstPerson && <div className="crosshair" aria-hidden="true" />}
 
@@ -206,11 +213,23 @@ export function Hud({
         </div>
       </header>
 
-      {!isMobile && !pointerLocked && (
+      {!isMobile && !pointerLocked && !hasCombatPanel && (
         <div className="fp-hint panel">Haz clic para mirar</div>
       )}
 
       {isMobile && <VirtualJoystick client={client} />}
+      {isMobile && !local?.inCombat && (
+        <button
+          type="button"
+          className="target-cycle panel"
+          onClick={() => client.cycleTarget()}
+          title="Fijar el siguiente objetivo (Tab)"
+        >
+          <span aria-hidden="true">🎯</span>
+          <span>Objetivo</span>
+        </button>
+      )}
+      <CombatHud client={client} />
 
       <footer className="hud-bottom">
         <div className="hud-bottom-left">
@@ -223,15 +242,24 @@ export function Hud({
                   : "radial-gradient(circle at 35% 30%, #3d6b55, #163a2a)",
               }}
             />
-            <span className="partner-copy">
+            <div className="partner-copy">
               <span className="panel-title">Tu compañero</span>
               <strong>{species?.name ?? "Conectando…"}</strong>
               <small>
                 {species
-                  ? `${species.stageLabel} · ${species.elementLabel} · Nv. ${local?.level ?? 1}`
+                  ? `${species.stageLabel} · ${species.elementLabel} · Nv. ${local?.level ?? 1} · ${local?.duelWins ?? 0}V/${local?.duelLosses ?? 0}D`
                   : "Esperando estado del servidor"}
               </small>
-            </span>
+              {local && (
+                <VitalBars
+                  hp={local.hp}
+                  maxHp={local.maxHp}
+                  ep={local.ep}
+                  maxEp={local.maxEp}
+                  compact
+                />
+              )}
+            </div>
           </div>
 
           <div className="controls-panel panel">
@@ -249,6 +277,12 @@ export function Hud({
             </span>
             <span>
               <kbd>V</kbd> cambiar vista
+            </span>
+            <span>
+              <kbd>Tab</kbd> objetivo
+            </span>
+            <span>
+              <kbd>1</kbd>–<kbd>3</kbd> habilidades
             </span>
             <span>
               <kbd>Enter</kbd> chat
