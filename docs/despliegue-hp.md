@@ -134,6 +134,11 @@ rm digiworld-web.tar.gz
 No hace falta reiniciar Python para archivos estáticos: sirve el contenido nuevo
 en la siguiente petición.
 
+El build copia también `apps/client/public/models/*.glb` a `dist/models`. Son
+assets estáticos; se actualizan con el mismo procedimiento. Si cambias un GLB
+manteniendo el mismo nombre y el navegador conserva caché, incrementa la versión
+de la URL en `apps/client/src/game/models/DetailedDigimon.tsx`.
+
 ---
 
 ## 4. Red

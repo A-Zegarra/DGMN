@@ -3,8 +3,8 @@
 Prototipo interno de un MMORPG 3D ligero inspirado en Digimon, pensado para
 navegador y Android. La primera versión es una prueba técnica de mundo
 compartido: varios jugadores caminan por el Bosque Digital en tiempo real, eligen
-un compañero, conversan y se retan a duelos con habilidades, energía y ataques
-automáticos.
+un compañero, conversan, se retan a duelos con habilidades y energía, y pueden ver
+el nuevo modelo PBR de Agumon en un visor 3D.
 
 > **Uso interno.** Los nombres y criaturas de Digimon pertenecen a sus
 > titulares. Este repositorio debe permanecer privado mientras use contenido
@@ -23,6 +23,9 @@ automáticos.
 - [x] Botón de pantalla completa horizontal / volver a vertical.
 - [x] Controles táctiles: joystick izquierdo y mirada en el resto de la pantalla.
 - [x] Modelos low-poly propios para Agumon, Gabumon y Patamon.
+- [x] Pipeline GLB con materiales PBR, animación por nodos y respaldo procedural.
+- [x] Visor 3D de personaje con luces de estudio, sombras y rotación.
+- [x] Primer modelo detallado de Agumon (~75k triángulos, GLB de ~1,9 MB).
 - [x] Tercera persona con sombras suaves, cielo degradado, texturas, vegetación y colinas.
 - [x] Terreno visual de 400 × 400 m con árboles, rocas y senderos instanciados.
 - [x] Selección de compañero: Agumon, Gabumon o Patamon.
@@ -36,6 +39,7 @@ automáticos.
 - [x] Cliente estático servido desde el HP y probado por Tailscale.
 - [x] Túnel público dedicado en Cloudflare, con `noindex`, separado de las apps existentes.
 - [ ] Enemigos salvajes, PvE y evoluciones (siguiente etapa).
+- [ ] Modelos GLB finales para Gabumon, Patamon y evoluciones.
 - [ ] Guardado persistente.
 - [ ] Prueba en un Android físico.
 
@@ -133,6 +137,9 @@ El botón de pantalla completa intenta bloquear la orientación horizontal en
 Android. En navegadores que no permiten el bloqueo (por ejemplo, Safari en
 iPhone), la pantalla completa puede funcionar pero la rotación queda manual.
 
+En la pantalla de inicio, arrastra el modelo del visor para girarlo. La rotación
+automática también está activada.
+
 ## Combate y duelos
 
 El combate es **PvP por duelos** y lo valida el servidor. No hay PvE todavía.
@@ -164,21 +171,44 @@ El servidor comprueba distancia, objetivo, EP, enfriamientos, estado de combate 
 HP. El cliente solo muestra el resultado y bloquea botones para evitar pulsaciones
 inválidas.
 
+## Modelos 3D detallados
+
+La pantalla de inicio incluye un **visor 3D en tiempo real** con iluminación de
+estudio, sombras de contacto, órbita con el ratón/dedo y rotación automática.
+Agumon ya usa un GLB detallado; Gabumon y Patamon muestran el respaldo low-poly
+con la etiqueta correspondiente.
+
+El pipeline está documentado en
+[`docs/modelos-3d.md`](docs/modelos-3d.md). Resumen:
+
+- GLB con materiales PBR, nodos articulados y animación procedural en Three.js.
+- Carga con respaldo automático si el archivo falta o falla.
+- Generador reproducible en `tools/model-gen/agumon.py` con Python gratuito.
+- Sustituir `apps/client/public/models/agumon.glb` por un modelo final no requiere
+  tocar el servidor.
+
+El Agumon actual es una **primera pasada estilizada** para validar el pipeline,
+no el modelo definitivo. Para alcanzar la calidad de un render de escultura
+profesional hace falta un GLB creado por un artista (Blender, ZBrush, Meshy) con
+texturas PBR y animaciones esqueléticas.
+
 ## Estructura
 
 ```text
 apps/
   client/            React + Vite + React Three Fiber
+    public/models/   GLB detallados (Agumon)
     src/game/        Escena, cámara FP/TP, tamer y compañero
-    src/game/models/ Modelos low-poly por especie
+    src/game/models/ Modelos procedurales y cargador GLB/PBR
     src/net/         Cliente Colyseus, predicción y mirada
-    src/ui/          Inicio, HUD, chat y joystick
+    src/ui/          Inicio, HUD, chat, visor y joystick
   server/            Colyseus 0.18
     src/rooms/       WorldRoom y estado autoritativo
 packages/
   content/           Especies, estadísticas, evoluciones, zonas y habilidades
   shared/            Esquema sincronizado, constantes y mensajes
-docs/                Diseño, análisis técnico y despliegue
+tools/model-gen/    Generador Python del GLB de Agumon
+docs/                Diseño, modelos, análisis técnico y despliegue
 ```
 
 ## Cómo funciona la red
@@ -210,10 +240,10 @@ docs/                Diseño, análisis técnico y despliegue
 
 1. Enemigos salvajes con patrulla, aggro y persecución.
 2. PvE con experiencia, botín y primera evolución.
-3. Más especies, habilidades y equilibrado de daño/curación.
+3. Modelos GLB finales de Gabumon, Patamon y evoluciones.
 4. Guardado SQLite de nivel, especie, victorias y derrotas.
 5. Prueba en un Android real.
-6. Modelos GLB con animaciones esqueléticas.
+6. Animaciones esqueléticas y LOD para móvil.
 
 ## Motor y modelos
 

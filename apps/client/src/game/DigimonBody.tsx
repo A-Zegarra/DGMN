@@ -1,8 +1,13 @@
-import { useEffect, useRef } from "react";
+import { Suspense, useEffect, useRef } from "react";
 import * as THREE from "three";
 
 import { SPECIES } from "@digiworld/content";
 
+import {
+  DetailedDigimon,
+  hasDetailedModel,
+  ModelErrorBoundary,
+} from "./models/DetailedDigimon";
 import { DigimonModel } from "./models/DigimonModel";
 
 export function DigimonBody({
@@ -53,11 +58,39 @@ export function DigimonBody({
       </mesh>
 
       <group ref={modelRoot} scale={scale}>
-        <DigimonModel
-          speciesId={speciesId}
-          moving={moving}
-          running={running}
-        />
+        {hasDetailedModel(speciesId) ? (
+          <ModelErrorBoundary
+            fallback={
+              <DigimonModel
+                speciesId={speciesId}
+                moving={moving}
+                running={running}
+              />
+            }
+          >
+            <Suspense
+              fallback={
+                <DigimonModel
+                  speciesId={speciesId}
+                  moving={moving}
+                  running={running}
+                />
+              }
+            >
+              <DetailedDigimon
+                speciesId={speciesId}
+                moving={moving}
+                running={running}
+              />
+            </Suspense>
+          </ModelErrorBoundary>
+        ) : (
+          <DigimonModel
+            speciesId={speciesId}
+            moving={moving}
+            running={running}
+          />
+        )}
       </group>
     </group>
   );

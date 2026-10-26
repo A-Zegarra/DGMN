@@ -1,0 +1,4 @@
+numpy>=2.0
+trimesh>=5.0
+scikit-image>=0.26
+fast-simplification>=0.2

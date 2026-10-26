@@ -164,6 +164,93 @@ button {
   letter-spacing: 0.02em;
 }
 
+.character-showcase {
+  position: relative;
+  height: clamp(300px, 43vh, 390px);
+  margin-top: 24px;
+  overflow: hidden;
+  border: 1px solid rgba(124, 255, 178, 0.16);
+  border-radius: 26px;
+  background:
+    radial-gradient(circle at 50% 48%, rgba(124, 255, 178, 0.13), transparent 54%),
+    radial-gradient(circle at 18% 12%, rgba(85, 214, 255, 0.09), transparent 44%),
+    linear-gradient(180deg, #0c1c14 0%, #050d09 100%);
+  box-shadow:
+    0 28px 70px rgba(0, 0, 0, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.character-showcase::after {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: radial-gradient(circle at 50% 42%, transparent 38%, rgba(2, 8, 5, 0.28) 100%);
+  content: "";
+  pointer-events: none;
+}
+
+.character-showcase.is-detailed {
+  border-color: rgba(124, 255, 178, 0.3);
+  box-shadow:
+    0 28px 70px rgba(0, 0, 0, 0.42),
+    0 0 44px rgba(124, 255, 178, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.character-showcase > div {
+  position: absolute !important;
+  inset: 0;
+}
+
+.character-showcase canvas {
+  touch-action: none;
+}
+
+.character-showcase-top {
+  position: absolute;
+  top: 14px;
+  right: 15px;
+  left: 15px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.character-showcase-title {
+  color: #8fb3a0;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.character-showcase-title strong {
+  color: #eafff2;
+  font-weight: 800;
+}
+
+.detail-badge {
+  padding: 4px 8px;
+  border: 1px solid rgba(124, 255, 178, 0.3);
+  border-radius: 999px;
+  background: rgba(124, 255, 178, 0.08);
+  color: #a7ffcb;
+  font-size: 0.56rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.character-showcase-caption {
+  margin: 9px 2px 0;
+  color: #6f9281;
+  font-size: 0.62rem;
+  letter-spacing: 0.03em;
+}
+
 .roadmap-card {
   margin-top: 30px;
   padding: 18px 20px;

@@ -1,4 +1,5 @@
 import { Canvas, useFrame } from "@react-three/fiber";
+import { Environment, Lightformer } from "@react-three/drei";
 import { useEffect } from "react";
 
 import { getZone } from "@digiworld/content";
@@ -47,6 +48,24 @@ function Scene({ client }: { client: WorldClient }) {
       <ambientLight intensity={0.75} />
       <hemisphereLight args={["#d7ecff", "#2d4a33", 0.65]} />
       <SunLight client={client} />
+      <Environment resolution={64} frames={1} environmentIntensity={0.18}>
+        <Lightformer
+          form="rect"
+          color="#e8f5ff"
+          intensity={1.3}
+          scale={[24, 24, 1]}
+          position={[0, 10, -12]}
+          target={[0, 0, 0]}
+        />
+        <Lightformer
+          form="rect"
+          color="#9bc5a7"
+          intensity={0.7}
+          scale={[24, 24, 1]}
+          position={[0, -7, 0]}
+          target={[0, 0, 0]}
+        />
+      </Environment>
 
       <Terrain />
       <Meadow />

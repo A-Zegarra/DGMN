@@ -8,6 +8,9 @@ import {
   type StarterId,
 } from "@digiworld/content";
 
+import { hasDetailedModel } from "../game/models/DetailedDigimon";
+import { CharacterStage } from "./CharacterStage";
+
 const STAT_MAX = {
   hp: 300,
   ep: 100,
@@ -58,6 +61,10 @@ export function StartScreen({
 }) {
   const [name, setName] = useState(initialName);
   const [selected, setSelected] = useState<StarterId>("agumon");
+  const shouldAutoFocus =
+    typeof window !== "undefined" &&
+    window.matchMedia("(pointer: fine)").matches &&
+    window.innerWidth > 700;
 
   const trimmed = name.trim();
   const validName = trimmed.length >= 2 && trimmed.length <= 16;
@@ -92,25 +99,32 @@ export function StartScreen({
 
           <p className="lead">
             Un MMORPG 3D ligero para navegador y Android. Explora el Bosque
-            Digital en primera o tercera persona junto a tu Digimon, en tiempo
-            real y con cámara libre.
+            Digital en primera o tercera persona, combate en duelos en tiempo
+            real y descubre el nuevo modelo PBR de Agumon.
           </p>
 
           <ul className="feature-pills">
-            <li>Primera y tercera persona</li>
-            <li>Tu Digimon te acompaña</li>
+            <li>Agumon en PBR</li>
+            <li>Duelos PvP</li>
             <li>Web + Android</li>
           </ul>
 
-          <div className="roadmap-card">
-            <span className="panel-title">En esta primera prueba</span>
-            <ul>
-              <li>Cámara en primera y tercera persona</li>
-              <li>Tu Digimon camina detrás de ti</li>
-              <li>Varios jugadores en la misma zona</li>
-              <li>Chat de zona y compañero inicial</li>
-            </ul>
+          <div
+            className={`character-showcase ${hasDetailedModel(selected) ? "is-detailed" : ""}`}
+          >
+            <CharacterStage speciesId={selected} />
+            <div className="character-showcase-top">
+              <span className="character-showcase-title">
+                Vista 3D · <strong>{species.name}</strong>
+              </span>
+              <span className="detail-badge">
+                {hasDetailedModel(selected) ? "PBR detallado" : "Low-poly"}
+              </span>
+            </div>
           </div>
+          <p className="character-showcase-caption">
+            Arrastra para girar · iluminación de estudio · materiales PBR
+          </p>
         </section>
 
         <section className="start-panel">
@@ -122,7 +136,7 @@ export function StartScreen({
                 onChange={(event) => setName(event.target.value)}
                 maxLength={16}
                 placeholder="Ej. Alvaro"
-                autoFocus
+                autoFocus={shouldAutoFocus}
               />
               <small>Entre 2 y 16 caracteres.</small>
             </label>
