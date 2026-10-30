@@ -12,6 +12,7 @@ export default function App() {
   const [client, setClient] = useState<WorldClient | null>(null);
   const [status, setStatus] = useState<ConnectionStatus>("idle");
   const [error, setError] = useState<string | null>(null);
+  const [savingExit, setSavingExit] = useState(false);
   const [rememberedName, setRememberedName] = useState(() => {
     try {
       return localStorage.getItem("digiworld:name") ?? "";
@@ -19,6 +20,10 @@ export default function App() {
       return "";
     }
   });
+
+  useEffect(() => {
+    document.body.classList.remove("retro");
+  }, []);
 
   useEffect(() => {
     if (!client) {
@@ -59,17 +64,22 @@ export default function App() {
     }
   };
 
-  const handleExit = () => {
-    if (!client) {
+  const handleExit = async () => {
+    if (!client || savingExit) {
       return;
     }
-    void client.room.leave();
-    setClient(null);
-    setStatus("idle");
+    setSavingExit(true);
+    try {
+      await client.saveAndLeave();
+      setClient(null);
+      setStatus("idle");
+    } catch (saveError) {
+      client.profileSaveError = saveError instanceof Error ? saveError.message : "No se pudo confirmar el guardado.";
+    } finally { setSavingExit(false); }
   };
 
   if (client) {
-    return <Game client={client} onExit={handleExit} />;
+    return <Game client={client} onExit={() => void handleExit()} />;
   }
 
   return (

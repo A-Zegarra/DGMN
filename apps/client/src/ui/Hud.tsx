@@ -1,13 +1,15 @@
-import { useEffect, useReducer, useState } from "react";
+import { useEffect, useReducer, useRef, useState } from "react";
 
 import { SPECIES } from "@digiworld/content";
 
 import type { WorldClient } from "../net/world-client";
-import { requestPointerLockSafe } from "../pointer-lock";
+import { CameraSettings } from "./CameraSettings";
 import { ChatPanel } from "./ChatPanel";
 import { CombatHud, VitalBars } from "./CombatHud";
 import { TouchLookArea } from "./TouchLookArea";
 import { VirtualJoystick } from "./VirtualJoystick";
+import { EvolutionPanel } from "./EvolutionPanel";
+import { PvEPanel, PvEStatus } from "./PvEPanel";
 
 export function Hud({
   client,
@@ -18,8 +20,20 @@ export function Hud({
 }) {
   const [, bumpRoster] = useReducer((value: number) => value + 1, 0);
   const [, bumpCombat] = useReducer((value: number) => value + 1, 0);
-  const [pointerLocked, setPointerLocked] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
+  const hudRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const header = headerRef.current;
+    const hud = hudRef.current;
+    if (!header || !hud) return;
+    const measure = () => hud.style.setProperty("--hud-top-end", `${header.offsetTop + header.offsetHeight}px`);
+    const observer = new ResizeObserver(measure);
+    observer.observe(header);
+    observer.observe(hud);
+    measure();
+    return () => observer.disconnect();
+  }, []);
   const [isTouch, setIsTouch] = useState(() =>
     window.matchMedia("(pointer: coarse)").matches,
   );
@@ -36,21 +50,18 @@ export function Hud({
     return client.subscribeCombat(() => bumpCombat());
   }, [client]);
 
+
   useEffect(() => {
-    const update = () => setPointerLocked(Boolean(document.pointerLockElement));
     const media = window.matchMedia("(pointer: coarse)");
     const updateTouch = () => setIsTouch(media.matches);
     const updateNarrow = () => setIsNarrow(window.innerWidth <= 700);
 
-    update();
     updateTouch();
     updateNarrow();
-    document.addEventListener("pointerlockchange", update);
     media.addEventListener("change", updateTouch);
     window.addEventListener("resize", updateNarrow);
 
     return () => {
-      document.removeEventListener("pointerlockchange", update);
       media.removeEventListener("change", updateTouch);
       window.removeEventListener("resize", updateNarrow);
     };
@@ -74,9 +85,10 @@ export function Hud({
   const players = Array.from(client.players.values());
   const local = client.players.get(client.localId);
   const species = local ? SPECIES[local.species] : undefined;
-  const isFirstPerson = client.cameraMode === "first-person";
   const isMobile = isTouch || isNarrow;
-  const hasCombatPanel = Boolean(local?.inCombat || client.targetId);
+  const hasCombatPanel = Boolean(
+    local?.inCombat || client.targetId || client.targetWildId,
+  );
 
   const roster = players
     .slice()
@@ -85,10 +97,6 @@ export function Hud({
     )
     .slice(0, 7);
 
-  const toggleCamera = () => {
-    client.toggleCameraMode();
-    requestPointerLockSafe();
-  };
 
   const toggleScreen = async () => {
     const doc = document as Document & {
@@ -143,11 +151,10 @@ export function Hud({
       : "Pantalla";
 
   return (
-    <div className={`hud ${hasCombatPanel ? "has-combat" : ""}`}>
-      {isMobile && <TouchLookArea client={client} />}
-      {isFirstPerson && <div className="crosshair" aria-hidden="true" />}
+    <div ref={hudRef} className={`hud ${hasCombatPanel ? "has-combat" : ""} ${isMobile ? "is-mobile" : ""} ${chatOpen ? "chat-open" : ""}`}>
+      {isTouch && <TouchLookArea client={client} />}
 
-      <header className="hud-top">
+      <header ref={headerRef} className="hud-top">
         <div className="brand-panel panel">
           <span className="brand-mark">DW</span>
           <span className="brand-copy">
@@ -159,15 +166,11 @@ export function Hud({
         <div className="hud-top-right">
           <div className="status-panel panel">
             <span className="live-dot" />
-            <span>{players.length} en línea</span>
-            <button
-              type="button"
-              className="camera-button"
-              onClick={toggleCamera}
-              title="Cambiar cámara (V)"
-            >
-              {isFirstPerson ? "1ª persona" : "3ª persona"}
-            </button>
+            <span className="online-count">{players.length} en línea</span>
+            <CameraSettings client={client} />
+            <EvolutionPanel client={client} />
+            <PvEPanel client={client} />
+            <span className="sprite-mode-label">Sprites DS</span>
             <button
               type="button"
               className="screen-button"
@@ -179,8 +182,12 @@ export function Hud({
                 {fullscreen ? "↺" : "⛶"}
               </span>
             </button>
-            <button type="button" className="exit-button" onClick={onExit}>
-              Salir
+            <span className={`save-status ${client.profileSaveError ? "has-error" : ""}`} role="status"
+              title={client.profileSaveError ?? (client.profileSavedAt ? `Último guardado: ${new Date(client.profileSavedAt).toLocaleTimeString()}` : "Esperando confirmación del servidor")}>
+              {client.profileSaveError ? "Error al guardar" : client.profileSavedAt ? "Guardado ✓" : "Guardando…"}
+            </span>
+            <button type="button" className="exit-button" disabled={client.isSavingExit} onClick={onExit}>
+              {client.isSavingExit ? "Guardando…" : "Guardar y salir"}
             </button>
           </div>
 
@@ -212,23 +219,11 @@ export function Hud({
           </div>
         </div>
       </header>
+      <PvEStatus client={client} />
+      {client.profileSaveError && <div className="save-error panel" role="alert">{client.profileSaveError}</div>}
 
-      {!isMobile && !pointerLocked && !hasCombatPanel && (
-        <div className="fp-hint panel">Haz clic para mirar</div>
-      )}
 
       {isMobile && <VirtualJoystick client={client} />}
-      {isMobile && !local?.inCombat && (
-        <button
-          type="button"
-          className="target-cycle panel"
-          onClick={() => client.cycleTarget()}
-          title="Fijar el siguiente objetivo (Tab)"
-        >
-          <span aria-hidden="true">🎯</span>
-          <span>Objetivo</span>
-        </button>
-      )}
       <CombatHud client={client} />
 
       <footer className="hud-bottom">
@@ -256,27 +251,30 @@ export function Hud({
                   maxHp={local.maxHp}
                   ep={local.ep}
                   maxEp={local.maxEp}
+                  xp={local.xp}
+                  xpNext={local.xpNext}
                   compact
                 />
               )}
             </div>
           </div>
 
-          <div className="controls-panel panel">
+          <details className="controls-panel panel">
+            <summary>Controles de teclado y ratón</summary>
             <span>
               <kbd>W</kbd>
+              <kbd>S</kbd> avanzar
+            </span>
+            <span>
               <kbd>A</kbd>
-              <kbd>S</kbd>
-              <kbd>D</kbd> mover
+              <kbd>D</kbd> girar · <kbd>Q</kbd>
+              <kbd>E</kbd> lateral
             </span>
             <span>
-              <kbd>Ratón</kbd> {isFirstPerson ? "mirar" : "orbitar"}
+              <kbd>Ratón</kbd> izq. orbitar · der. orientar
             </span>
             <span>
-              <kbd>Shift</kbd> correr
-            </span>
-            <span>
-              <kbd>V</kbd> cambiar vista
+              <kbd>Rueda</kbd> zoom · <kbd>Shift</kbd> correr
             </span>
             <span>
               <kbd>Tab</kbd> objetivo
@@ -287,12 +285,13 @@ export function Hud({
             <span>
               <kbd>Enter</kbd> chat
             </span>
-          </div>
+          </details>
         </div>
 
         <ChatPanel
           client={client}
           open={chatOpen}
+          onOpen={() => setChatOpen(true)}
           onClose={() => setChatOpen(false)}
         />
       </footer>

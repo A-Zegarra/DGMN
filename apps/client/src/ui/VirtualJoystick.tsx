@@ -1,10 +1,6 @@
-import { useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { WorldClient } from "../net/world-client";
-
-const BASE_SIZE = 118;
-const KNOB_SIZE = 52;
-const RADIUS = (BASE_SIZE - KNOB_SIZE) / 2;
 
 export function VirtualJoystick({ client }: { client: WorldClient }) {
   const baseRef = useRef<HTMLDivElement>(null);
@@ -19,29 +15,49 @@ export function VirtualJoystick({ client }: { client: WorldClient }) {
     }
 
     const rect = base.getBoundingClientRect();
+    const radius = Math.max(1, (rect.width - 48) / 2);
     let dx = clientX - (rect.left + rect.width / 2);
     let dy = clientY - (rect.top + rect.height / 2);
     const distance = Math.hypot(dx, dy);
 
-    if (distance > RADIUS) {
-      dx = (dx / distance) * RADIUS;
-      dy = (dy / distance) * RADIUS;
+    if (distance > radius) {
+      dx = (dx / distance) * radius;
+      dy = (dy / distance) * radius;
     }
 
     setKnob({ x: dx, y: dy });
-    client.setTouchMove(dx / RADIUS, -dy / RADIUS);
+    // Zona muerta: apoyar el dedo no debe producir deriva.
+    const strength = Math.min(1, Math.max(0, (distance / radius - 0.12) / 0.88));
+    client.setTouchMove(distance ? dx / Math.min(distance, radius) * strength : 0,
+      distance ? -dy / Math.min(distance, radius) * strength : 0);
   };
 
-  const reset = () => {
+  const reset = useCallback(() => {
+    const id = pointerId.current;
     pointerId.current = null;
     setActive(false);
     setKnob({ x: 0, y: 0 });
     client.setTouchMove(0, 0);
-  };
+    if (id !== null && baseRef.current?.hasPointerCapture(id)) baseRef.current.releasePointerCapture(id);
+  }, [client]);
+
+  useEffect(() => {
+    const end = (event: PointerEvent) => { if (event.pointerId === pointerId.current) reset(); };
+    const unsubscribe = client.subscribeInputReset(reset);
+    window.addEventListener("pointerup", end);
+    window.addEventListener("pointercancel", end);
+    return () => {
+      unsubscribe();
+      window.removeEventListener("pointerup", end);
+      window.removeEventListener("pointercancel", end);
+      reset();
+    };
+  }, [client, reset]);
 
   const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
     event.preventDefault();
     event.stopPropagation();
+    if (client.inputBlocked || pointerId.current !== null || (event.pointerType === "mouse" && event.button !== 0)) return;
     pointerId.current = event.pointerId;
     setActive(true);
     try {
@@ -75,6 +91,7 @@ export function VirtualJoystick({ client }: { client: WorldClient }) {
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerEnd}
       onPointerCancel={handlePointerEnd}
+      onLostPointerCapture={handlePointerEnd}
       onContextMenu={(event) => event.preventDefault()}
       role="presentation"
     >

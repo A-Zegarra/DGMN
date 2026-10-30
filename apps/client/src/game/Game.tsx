@@ -5,7 +5,6 @@ import { useEffect } from "react";
 import { getZone } from "@digiworld/content";
 
 import type { WorldClient } from "../net/world-client";
-import { exitPointerLockSafe, requestPointerLockSafe } from "../pointer-lock";
 import { Hud } from "../ui/Hud";
 import { CameraRig } from "./CameraRig";
 import { Forest } from "./Forest";
@@ -16,6 +15,9 @@ import { Players } from "./Players";
 import { SkyDome } from "./SkyDome";
 import { SunLight } from "./SunLight";
 import { Terrain } from "./Terrain";
+import { Wilds } from "./Wilds";
+import { DigitalRuins } from "./DigitalRuins";
+import { CombatEffects } from "./CombatEffects";
 
 const ZONE = getZone("bosque-digital");
 
@@ -24,6 +26,8 @@ const MOVEMENT_KEYS = [
   "a",
   "s",
   "d",
+  "q",
+  "e",
   "arrowup",
   "arrowdown",
   "arrowleft",
@@ -67,11 +71,16 @@ function Scene({ client }: { client: WorldClient }) {
         />
       </Environment>
 
+      <group userData={{ cameraSolid: true }}>
       <Terrain />
-      <Meadow />
       <Forest />
       <Hills />
+      <DigitalRuins />
+      </group>
+      <Meadow />
       <Players client={client} />
+      <Wilds client={client} />
+      <CombatEffects client={client} />
       <CameraRig client={client} />
       <MouseLookControls client={client} />
     </>
@@ -86,18 +95,28 @@ export function Game({
   onExit: () => void;
 }) {
   useEffect(() => {
+    const stopControls = client.startControls();
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (client.inputBlocked || event.ctrlKey || event.metaKey || event.altKey || event.isComposing) return;
       const target = event.target as HTMLElement | null;
       if (
         target &&
         (target.tagName === "INPUT" ||
           target.tagName === "TEXTAREA" ||
+          target.tagName === "SELECT" ||
           target.isContentEditable)
       ) {
         return;
       }
 
-      const key = event.key.toLowerCase();
+      const key = /^Key[A-Z]$/.test(event.code) ? event.code.slice(3).toLowerCase() : event.key.toLowerCase();
+      if(key==="r"&&!event.repeat){event.preventDefault();client.recallCompanion();return;}
+      if (key === "escape") {
+        client.cancelApproach();
+        client.clearTarget();
+        return;
+      }
+      if (event.repeat && ["1", "2", "3", "tab"].includes(key)) return;
       if (key === "tab") {
         event.preventDefault();
         client.cycleTarget();
@@ -111,39 +130,43 @@ export function Game({
         }
         return;
       }
-      if (key === "v") {
-        event.preventDefault();
-        const nextMode = client.toggleCameraMode();
-        if (nextMode === "first-person") {
-          requestPointerLockSafe();
-        } else {
-          exitPointerLockSafe();
-        }
-        return;
-      }
       if (MOVEMENT_KEYS.includes(key)) {
-        client.setKey(key, true);
+        client.setKey(key, true, event.repeat);
         event.preventDefault();
       }
     };
 
     const handleKeyUp = (event: KeyboardEvent) => {
-      client.setKey(event.key.toLowerCase(), false);
+      const key = /^Key[A-Z]$/.test(event.code) ? event.code.slice(3).toLowerCase() : event.key.toLowerCase();
+      client.setKey(key, false);
     };
 
     const handleBlur = () => {
-      client.clearKeys();
-      client.setTouchMove(0, 0);
+      client.resetControls();
+    };
+    const handleVisibility = () => { if (document.hidden) handleBlur(); };
+    const handleFocus = (event: FocusEvent) => {
+      if ((event.target as HTMLElement)?.matches('input, textarea, select, [contenteditable="true"]')) handleBlur();
     };
 
     window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("keyup", handleKeyUp);
+    window.addEventListener("keyup", handleKeyUp, true);
     window.addEventListener("blur", handleBlur);
+    window.addEventListener("pagehide", handleBlur);
+    window.addEventListener("orientationchange", handleBlur);
+    document.addEventListener("visibilitychange", handleVisibility);
+    document.addEventListener("focusin", handleFocus);
 
     return () => {
+      stopControls();
       window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("keyup", handleKeyUp);
+      window.removeEventListener("keyup", handleKeyUp, true);
       window.removeEventListener("blur", handleBlur);
+      window.removeEventListener("pagehide", handleBlur);
+      window.removeEventListener("orientationchange", handleBlur);
+      document.removeEventListener("visibilitychange", handleVisibility);
+      document.removeEventListener("focusin", handleFocus);
+      handleBlur();
     };
   }, [client]);
 
@@ -153,7 +176,7 @@ export function Game({
         shadows
         dpr={[1, 1.8]}
         gl={{ antialias: true, powerPreference: "high-performance" }}
-        camera={{ position: [0, 3, -5], fov: 55, near: 0.1, far: 600 }}
+        camera={{ position: [0, 3, -6], fov: 65, near: 0.1, far: 600 }}
       >
         <Simulation client={client} />
         <Scene client={client} />

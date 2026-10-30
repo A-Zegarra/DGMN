@@ -1,37 +1,42 @@
-import { Suspense, useEffect, useRef } from "react";
+import { useRef } from "react";
 import * as THREE from "three";
 
 import { SPECIES } from "@digiworld/content";
 
-import {
-  DetailedDigimon,
-  hasDetailedModel,
-  ModelErrorBoundary,
-} from "./models/DetailedDigimon";
-import { DigimonModel } from "./models/DigimonModel";
+import { DsSpriteActor } from "./models/DsSpriteActor";
+import { useFrame } from "@react-three/fiber";
+import type { CombatVisual } from "../net/world-client";
 
 export function DigimonBody({
   speciesId,
   moving,
   running,
   isLocal,
+  combat,
+  defeated = false,
 }: {
   speciesId: string;
   moving: boolean;
   running: boolean;
   isLocal: boolean;
+  combat?: CombatVisual;
+  defeated?: boolean;
 }) {
   const species = SPECIES[speciesId] ?? SPECIES.agumon!;
   const scale = species.scale;
   const modelRoot = useRef<THREE.Group>(null);
-
-  useEffect(() => {
-    modelRoot.current?.traverse((object) => {
-      if (object instanceof THREE.Mesh) {
-        object.castShadow = true;
-      }
-    });
-  }, []);
+  useFrame(() => {
+    if (!modelRoot.current) return;
+    const now = performance.now();
+    const attack = combat ? Math.max(0, 1 - (now - combat.attackAt) / 500) : 0;
+    const hit = combat ? Math.max(0, 1 - (now - combat.hitAt) / 350) : 0;
+    modelRoot.current.position.z = Math.sin(attack * Math.PI) * 0.35;
+    modelRoot.current.position.x = hit > 0 ? Math.sin(now * 0.08) * hit * 0.06 : 0;
+    modelRoot.current.rotation.z = defeated ? -Math.PI / 2 : hit * -0.1;
+    const evolutionAge = now - (combat?.evolutionAt ?? -10000);
+    const pulse = evolutionAge < 3000 ? 1 + Math.sin(evolutionAge / 100) * 0.07 * (1 - evolutionAge / 3000) : 1;
+    modelRoot.current.scale.setScalar(scale * pulse);
+  });
 
   return (
     <group>
@@ -52,45 +57,24 @@ export function DigimonBody({
         <meshBasicMaterial
           color="#04120b"
           transparent
-          opacity={0.22}
+          opacity={0.28}
           depthWrite={false}
         />
       </mesh>
 
       <group ref={modelRoot} scale={scale}>
-        {hasDetailedModel(speciesId) ? (
-          <ModelErrorBoundary
-            fallback={
-              <DigimonModel
-                speciesId={speciesId}
-                moving={moving}
-                running={running}
-              />
-            }
-          >
-            <Suspense
-              fallback={
-                <DigimonModel
-                  speciesId={speciesId}
-                  moving={moving}
-                  running={running}
-                />
-              }
-            >
-              <DetailedDigimon
-                speciesId={speciesId}
-                moving={moving}
-                running={running}
-              />
-            </Suspense>
-          </ModelErrorBoundary>
-        ) : (
-          <DigimonModel
+          <DsSpriteActor
+            kind="digimon"
             speciesId={speciesId}
+            primaryColor={species.color}
+            accentColor={species.accent}
             moving={moving}
             running={running}
+            worldSize={2.0}
+            planeY={0.96}
+            combat={combat}
+            defeated={defeated}
           />
-        )}
       </group>
     </group>
   );

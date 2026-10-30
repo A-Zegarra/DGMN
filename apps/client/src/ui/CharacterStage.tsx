@@ -1,38 +1,25 @@
 import { ContactShadows, Environment, Lightformer, OrbitControls } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
-import { Suspense } from "react";
 import * as THREE from "three";
 
 import { SPECIES } from "@digiworld/content";
 
-import {
-  DetailedDigimon,
-  hasDetailedModel,
-  ModelErrorBoundary,
-} from "../game/models/DetailedDigimon";
-import { DigimonModel } from "../game/models/DigimonModel";
+import { DsSpriteActor } from "../game/models/DsSpriteActor";
 
 function SpeciesModel({ speciesId }: { speciesId: string }) {
-  const fallback = (
-    <DigimonModel speciesId={speciesId} moving={false} running={false} />
-  );
-
-  if (!hasDetailedModel(speciesId)) {
-    return fallback;
-  }
-
-  return (
-    <ModelErrorBoundary fallback={fallback}>
-      <Suspense fallback={fallback}>
-        <DetailedDigimon
-          speciesId={speciesId}
-          moving={false}
-          running={false}
-          preview
-        />
-      </Suspense>
-    </ModelErrorBoundary>
-  );
+  const species = SPECIES[speciesId] ?? SPECIES.agumon!;
+    return (
+      <DsSpriteActor
+        kind="digimon"
+        speciesId={speciesId}
+        primaryColor={species.color}
+        accentColor={species.accent}
+        moving={true}
+        running={false}
+        worldSize={2.1}
+        planeY={1.0}
+      />
+    );
 }
 
 function Studio({ speciesId }: { speciesId: string }) {
@@ -121,10 +108,10 @@ function Studio({ speciesId }: { speciesId: string }) {
         enablePan={false}
         enableZoom={false}
         autoRotate
-        autoRotateSpeed={0.4}
+        autoRotateSpeed={1.2}
         target={[0, 0.92, 0]}
         minPolarAngle={0.95}
-        maxPolarAngle={1.55}
+        maxPolarAngle={1.45}
         minDistance={2.6}
         maxDistance={4.2}
       />
@@ -138,7 +125,7 @@ export function CharacterStage({ speciesId }: { speciesId: string }) {
       shadows
       dpr={[1, 2]}
       gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
-      camera={{ position: [1.45, 1.28, 3.55], fov: 33, near: 0.1, far: 30 }}
+      camera={{ position: [1.45, 1.65, 3.55], fov: 33, near: 0.1, far: 30 }}
       onCreated={({ gl }) => {
         gl.toneMapping = THREE.ACESFilmicToneMapping;
         gl.toneMappingExposure = 1.08;

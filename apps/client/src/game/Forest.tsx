@@ -95,7 +95,7 @@ function buildForest(): ForestMeshes {
   const bushes = buildProps(random, 32);
 
   const trunks = new THREE.InstancedMesh(
-    new THREE.CylinderGeometry(0.17, 0.25, 1.6, 5),
+    new THREE.CylinderGeometry(0.16, 0.32, 3.6, 10),
     new THREE.MeshStandardMaterial({
       color: 0x6b4b2a,
       flatShading: true,
@@ -105,17 +105,17 @@ function buildForest(): ForestMeshes {
   );
 
   const foliage = new THREE.InstancedMesh(
-    new THREE.ConeGeometry(1.2, 3.4, 6),
+    new THREE.IcosahedronGeometry(1.25, 2),
     new THREE.MeshStandardMaterial({
       color: 0xffffff,
-      flatShading: true,
+      flatShading: false,
       roughness: 1,
     }),
-    trees.length,
+    trees.length * 5,
   );
 
   const rocksMesh = new THREE.InstancedMesh(
-    new THREE.DodecahedronGeometry(0.7, 0),
+    new THREE.DodecahedronGeometry(0.7, 1),
     new THREE.MeshStandardMaterial({
       color: 0xffffff,
       flatShading: true,
@@ -125,7 +125,7 @@ function buildForest(): ForestMeshes {
   );
 
   const bushesMesh = new THREE.InstancedMesh(
-    new THREE.IcosahedronGeometry(0.85, 0),
+    new THREE.IcosahedronGeometry(0.85, 2),
     new THREE.MeshStandardMaterial({
       color: 0xffffff,
       flatShading: true,
@@ -144,7 +144,7 @@ function buildForest(): ForestMeshes {
   trees.forEach((tree, index) => {
     quaternion.setFromAxisAngle(THREE.Object3D.DEFAULT_UP, tree.rotation);
 
-    position.set(tree.x, 0.8 * tree.scale, tree.z);
+    position.set(tree.x, 1.8 * tree.scale, tree.z);
     scale.setScalar(tree.scale);
     matrix.compose(position, quaternion, scale);
     trunks.setMatrixAt(index, matrix);
@@ -153,13 +153,18 @@ function buildForest(): ForestMeshes {
       color.set("#6b4b2a").offsetHSL(0, 0, (tree.tone - 0.5) * 0.08),
     );
 
-    position.set(tree.x, 3.05 * tree.scale, tree.z);
-    matrix.compose(position, quaternion, scale);
-    foliage.setMatrixAt(index, matrix);
-    foliage.setColorAt(
-      index,
-      color.set("#2f7d4a").offsetHSL(0, 0, (tree.tone - 0.5) * 0.14),
-    );
+    for (let crown = 0; crown < 5; crown += 1) {
+      const angle = crown * 2.4 + tree.rotation;
+      const spread = crown === 0 ? 0 : 0.85 * tree.scale;
+      position.set(tree.x + Math.cos(angle) * spread,
+        (crown === 0 ? 4.2 : 3.25 + crown * 0.12) * tree.scale,
+        tree.z + Math.sin(angle) * spread);
+      scale.set(tree.scale * 1.05, tree.scale * 0.85, tree.scale);
+      matrix.compose(position, quaternion, scale);
+      foliage.setMatrixAt(index * 5 + crown, matrix);
+      foliage.setColorAt(index * 5 + crown,
+        color.set("#3f7157").offsetHSL(0.015 * crown, 0, (tree.tone - 0.5) * 0.1 + crown * 0.015));
+    }
   });
 
   rocks.forEach((rock, index) => {
@@ -198,6 +203,9 @@ function buildForest(): ForestMeshes {
     mesh.castShadow = true;
     mesh.receiveShadow = true;
   }
+
+  foliage.userData.noCameraCollision = true;
+  bushesMesh.userData.noCameraCollision = true;
 
   return { trunks, foliage, rocks: rocksMesh, bushes: bushesMesh };
 }

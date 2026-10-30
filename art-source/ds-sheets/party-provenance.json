@@ -1,0 +1,107 @@
+{
+  "tamer": {
+    "source": "art-source/ds-sheets/tamer_raw.png",
+    "sha256": "120eecc53e01c33a96153cb1e84bb65114e10ff199683b102fb4311c392847d0",
+    "sourceDimensions": [
+      328,
+      626
+    ],
+    "sheet": 48323,
+    "credits": "RadSpyro y redblueyellow",
+    "url": "https://www.spriters-resource.com/ds_dsi/dgmnworldds/asset/48323/",
+    "archive": "https://web.archive.org/web/2024im_/https://www.spriters-resource.com/download/48323/",
+    "dimensions": [
+      384,
+      240
+    ],
+    "columns": 8,
+    "rows": 5,
+    "limitations": "Protagonista masculino original con ocho direcciones de idle/caminar. No se usan los retratos ni las poses de caída. No hay selección de apariencia ni recoloreado.",
+    "atlas": "apps/client/src/assets/sprites/tamer-ds.png",
+    "atlasSha256": "2b9710c11378e98926dfe5d2d33babd574b2c6f0c91ef60bc6b4ba5a0e9bd920"
+  },
+  "gabumon": {
+    "source": "art-source/ds-sheets/gabumon_raw.png",
+    "sha256": "746e0bda873f274568c8445fa90861d43348ecf2d98abdbf30b439a42e0c53cb",
+    "sourceDimensions": [
+      412,
+      203
+    ],
+    "sheet": 41249,
+    "credits": "redblueyellow",
+    "url": "https://www.spriters-resource.com/ds_dsi/dgmnworldds/asset/41249/",
+    "archive": "https://web.archive.org/web/2024im_/https://www.spriters-resource.com/download/41249/",
+    "dimensions": [
+      384,
+      336
+    ],
+    "columns": 8,
+    "rows": 7,
+    "limitations": "Se reutilizan/reflejan las vistas disponibles. La espalda solo incluye una pose; el frente tiene dos pasos. Ataque y reacción usan poses de combate originales, no una secuencia específica de daño.",
+    "atlas": "apps/client/src/assets/sprites/gabumon-ds.png",
+    "atlasSha256": "cd04b155e3058282204aae5c02067c942d0d3d6ac04060c395bf407585ced2ef"
+  },
+  "patamon": {
+    "source": "art-source/ds-sheets/patamon_raw.png",
+    "sha256": "222f43c10ba65ea97e6741bddc9fa1a1aef7bb569bd1e6ebe238e5f135ca1e47",
+    "sourceDimensions": [
+      355,
+      134
+    ],
+    "sheet": 48422,
+    "credits": "Mighty Jetters y redblueyellow",
+    "url": "https://www.spriters-resource.com/ds_dsi/dgmnworldds/asset/48422/",
+    "archive": "https://web.archive.org/web/2024im_/https://www.spriters-resource.com/download/48422/",
+    "dimensions": [
+      384,
+      336
+    ],
+    "columns": 8,
+    "rows": 7,
+    "limitations": "Las vistas no incluyen ocho ángulos completos; se usa la más cercana o su reflejo. Ataque y reacción se ajustan desde poses originales con nearest-neighbor.",
+    "atlas": "apps/client/src/assets/sprites/patamon-ds.png",
+    "atlasSha256": "497d9cdf9b516fc33240cbab204b12ffbdf08ab3cbdc9579a548258ec02e734b"
+  },
+  "garurumon": {
+    "source": "art-source/ds-sheets/garurumon_raw.png",
+    "sha256": "665dd0cd2df167cdf3908caec6dc3384039ec1e89cb4b4c63792649f59bd5428",
+    "sourceDimensions": [
+      313,
+      294
+    ],
+    "sheet": 48583,
+    "credits": "RadSpyro",
+    "url": "https://www.spriters-resource.com/ds_dsi/dgmnworldds/asset/48583/",
+    "archive": "https://web.archive.org/web/2024im_/https://www.spriters-resource.com/download/48583/",
+    "dimensions": [
+      384,
+      336
+    ],
+    "columns": 8,
+    "rows": 7,
+    "limitations": "No hay espalda completa: se reutiliza/refleja la vista más cercana. Las poses grandes se reducen con nearest-neighbor, conservando colores y contornos negros.",
+    "atlas": "apps/client/src/assets/sprites/garurumon-ds.png",
+    "atlasSha256": "e33e6855f9a2fdd740a2bbccb13d4a0a0fb33c53fc790bc20388a09a3b56c4be"
+  },
+  "angemon": {
+    "source": "art-source/ds-sheets/angemon_raw.png",
+    "sha256": "ed29276ef3b76fa51220c21a7d742f463887a8cf7144a147d297a2acef9764bc",
+    "sourceDimensions": [
+      312,
+      425
+    ],
+    "sheet": 48611,
+    "credits": "A.J. Nitro y Dazz",
+    "url": "https://www.spriters-resource.com/ds_dsi/dgmnworldds/asset/48611/",
+    "archive": "https://web.archive.org/web/2024im_/https://www.spriters-resource.com/download/48611/",
+    "dimensions": [
+      384,
+      336
+    ],
+    "columns": 8,
+    "rows": 7,
+    "limitations": "No hay ocho ángulos completos; se reutiliza/refleja la vista disponible más cercana. Ataque y reacción usan poses originales, no una secuencia específica de daño.",
+    "atlas": "apps/client/src/assets/sprites/angemon-ds.png",
+    "atlasSha256": "c62a1ad1d46d2658787bc0a462514578b6bb90eb5d5e098cbb6ad6c9b5ffdf58"
+  }
+}

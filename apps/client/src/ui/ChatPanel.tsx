@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 import { CHAT_MAX_LENGTH } from "@digiworld/shared/constants";
 import type { ChatMessage } from "@digiworld/shared/messages";
 
 import type { WorldClient } from "../net/world-client";
+import { useGameInputBlock } from "./use-game-input-block";
 
 function formatTime(timestamp: number): string {
   return new Date(timestamp).toLocaleTimeString("es", {
@@ -16,15 +18,19 @@ export function ChatPanel({
   client,
   open = true,
   onClose,
+  onOpen,
 }: {
   client: WorldClient;
   open?: boolean;
   onClose?: () => void;
+  onOpen?: () => void;
 }) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState("");
   const listRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  useGameInputBlock(client, open);
+  useEffect(() => { if (open) inputRef.current?.focus(); }, [open]);
 
   useEffect(() => {
     return client.subscribeChat((message) => {
@@ -48,9 +54,9 @@ export function ChatPanel({
           target.tagName === "TEXTAREA" ||
           target.isContentEditable);
 
-      if (event.key === "Enter" && !isTyping) {
+      if (event.key === "Enter" && !isTyping && !client.inputBlocked && !event.repeat) {
         event.preventDefault();
-        inputRef.current?.focus();
+        onOpen?.();
       }
 
       if (
@@ -58,12 +64,13 @@ export function ChatPanel({
         document.activeElement === inputRef.current
       ) {
         inputRef.current?.blur();
+        onClose?.();
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  }, [client, onOpen, onClose]);
 
   const sendMessage = () => {
     const text = draft.trim();
@@ -74,8 +81,9 @@ export function ChatPanel({
     setDraft("");
   };
 
-  return (
-    <section className={`chat-panel panel ${open ? "is-open" : ""}`}>
+  if (!open) return null;
+  return createPortal(
+    <div className="evolution-overlay"><section className="chat-panel panel is-open" role="dialog" aria-modal="true" aria-label="Chat de zona">
       <header className="chat-header">
         <span className="panel-title">Chat de zona</span>
         <span className="chat-hint">Enter para escribir</span>
@@ -120,6 +128,8 @@ export function ChatPanel({
             if (event.key === "Enter") {
               event.preventDefault();
               sendMessage();
+              inputRef.current?.blur();
+              onClose?.();
             }
           }}
         />
@@ -127,6 +137,6 @@ export function ChatPanel({
           Enviar
         </button>
       </div>
-    </section>
+    </section></div>, document.body,
   );
 }

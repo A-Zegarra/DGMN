@@ -1,4 +1,5 @@
 export type DigiStage =
+  | "in-training"
   | "rookie"
   | "champion"
   | "ultimate"
@@ -83,6 +84,22 @@ export const SPECIES: Record<string, Species> = {
     description:
       "Dinosaurio de casco córneo y cola poderosa. Su Mega Flame arrasa la línea defensiva.",
     stats: { hp: 260, ep: 70, atk: 58, def: 42, spd: 30 },
+    evolvesTo: [{ id: "metalgreymon", level: 14 }],
+  },
+  metalgreymon: {
+    id: "metalgreymon", name: "MetalGreymon", stage: "ultimate", stageLabel: "Ultimate",
+    attribute: "vaccine", attributeLabel: "Vacuna", element: "fuego", elementLabel: "Fuego",
+    color: "#d97706", accent: "#a9c5d8", scale: 1.65,
+    description: "Cíborg de armadura metálica, alas y un brazo mecánico. Su Giga Destructor dispara misiles desde el pecho.",
+    stats: { hp: 420, ep: 110, atk: 88, def: 66, spd: 34 },
+    evolvesTo: [{ id: "wargreymon", level: 20 }],
+  },
+  wargreymon: {
+    id: "wargreymon", name: "WarGreymon", stage: "mega", stageLabel: "Mega",
+    attribute: "vaccine", attributeLabel: "Vacuna", element: "fuego", elementLabel: "Fuego",
+    color: "#eab308", accent: "#fff1b6", scale: 1.45,
+    description: "Guerrero de armadura de cromo Digizoid y garras Dramon. Concentra la energía del entorno en su Fuerza de Gaia.",
+    stats: { hp: 620, ep: 160, atk: 130, def: 98, spd: 48 },
     evolvesTo: [],
   },
   gabumon: {
@@ -156,8 +173,8 @@ export const SPECIES: Record<string, Species> = {
   koromon: {
     id: "koromon",
     name: "Koromon",
-    stage: "salvaje",
-    stageLabel: "Salvaje",
+    stage: "in-training",
+    stageLabel: "En entrenamiento",
     attribute: "vaccine",
     attributeLabel: "Vacuna",
     element: "fuego",
@@ -167,8 +184,8 @@ export const SPECIES: Record<string, Species> = {
     scale: 0.55,
     description:
       "Cabeza redonda y saltarina. Aparece en claros del bosque buscando comida.",
-    stats: { hp: 40, ep: 10, atk: 8, def: 6, spd: 10 },
-    evolvesTo: [{ id: "agumon", level: 5, affinity: 10 }],
+    stats: { hp: 85, ep: 30, atk: 16, def: 12, spd: 18 },
+    evolvesTo: [{ id: "agumon", level: 5 }],
   },
   pagumon: {
     id: "pagumon",
@@ -223,7 +240,7 @@ export const SPECIES: Record<string, Species> = {
   },
 };
 
-export const STARTER_IDS = ["agumon", "gabumon", "patamon"] as const;
+export const STARTER_IDS = ["koromon", "agumon", "gabumon", "patamon"] as const;
 export type StarterId = (typeof STARTER_IDS)[number];
 
 export const WILD_IDS = ["koromon", "pagumon", "gazimon"] as const;

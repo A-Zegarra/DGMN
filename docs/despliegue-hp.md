@@ -4,7 +4,8 @@
 - Juego Colyseus en `/home/alvaro/digiworld`, puerto **2567**.
 - Cliente estático en `/home/alvaro/digiworld-web`, puerto **8080**.
 
-**Acceso:** Tailscale (`100.116.141.27`). No está expuesto a Internet.
+**Acceso:** administración por Tailscale (`100.116.141.27`) y juego mediante
+el túnel dedicado en <https://digiworld.aliproinv.com>.
 **Servicios existentes:** no se modificó Nginx, Cloudflare, MySQL ni las 20 apps
 de PM2. El juego corre como procesos aparte.
 
@@ -114,7 +115,17 @@ sudo systemctl restart digiworld-server
 
 ### 3.1 Actualizar el cliente estático
 
-Desde Windows, después de `pnpm --filter @digiworld/client build`:
+Desde Windows, para generar un build público sin modelos de terceros:
+
+```powershell
+pnpm build:public
+```
+
+Ese script compila con `VITE_SERVER_URL=https://digiworld.aliproinv.com` y elimina
+de `dist/` todos los modelos de personajes y los sprites privados. La presentación
+activa es solo sprites DS: `dist/models` no debe existir.
+
+Luego empaqueta `apps/client/dist`:
 
 ```powershell
 tar -czf "$env:TEMP\digiworld-web.tar.gz" -C apps/client/dist .
@@ -125,8 +136,7 @@ En el HP:
 
 ```bash
 cd /home/alvaro
-rm -rf digiworld-web
-mkdir digiworld-web
+mkdir -p digiworld-web
 tar -xzf digiworld-web.tar.gz -C digiworld-web
 rm digiworld-web.tar.gz
 ```
@@ -134,10 +144,99 @@ rm digiworld-web.tar.gz
 No hace falta reiniciar Python para archivos estáticos: sirve el contenido nuevo
 en la siguiente petición.
 
-El build copia también `apps/client/public/models/*.glb` a `dist/models`. Son
-assets estáticos; se actualizan con el mismo procedimiento. Si cambias un GLB
-manteniendo el mismo nombre y el navegador conserva caché, incrementa la versión
-de la URL en `apps/client/src/game/models/DetailedDigimon.tsx`.
+Conservar los assets anteriores evita romper pestañas que aún tengan abierto
+el cliente anterior. El cliente nuevo no solicita modelos GLB/GLTF.
+
+### 3.2 Protección de las partidas
+
+Antes de actualizar, respaldar por separado código, web y `apps/server/data`
+con permisos privados (`umask 077`). Nunca incluir datos locales en el archivo
+de actualización ni reemplazar el directorio remoto de datos.
+
+Para cambios de servidor, detener solo `digiworld-server`, obtener otra copia
+del archivo de perfiles ya detenido, extraer únicamente `apps/server/src`,
+`packages/shared/src` y `packages/content/src`, y arrancar el servicio.
+Comprobar `/health` antes de reemplazar el cliente estático. No reiniciar
+los otros servicios ni las aplicaciones ajenas al juego.
+
+La actualización DS/PvE conserva los perfiles existentes y migra el inventario
+al entrar. Los respaldos están en `/home/alvaro/digiworld-backups/`.
+Pruebas públicas: `scripts/test-agumon-ds.cjs`,
+`scripts/test-persistence-ui.cjs` y `scripts/test-pve-ui.cjs`, usando
+`GAME_URL=https://digiworld.aliproinv.com/`.
+
+### 3.3 Misiones del refugio
+
+La actualización de misiones añade `packages/content/src/quests.ts` y actualiza
+el catálogo, mensajes, `WorldRoom` y `profile-store`. No requiere dependencias
+nuevas ni Docker. Los perfiles sin `quests` se migran al entrar, conservando
+especie, nivel, inventario y el resto del progreso.
+
+Se respaldaron código, web y datos antes de publicar, y otra vez los datos con
+el servicio detenido. Los respaldos de esta actualización llevan el sufijo
+`before-quests-20261029-053921`. Se verificó por SHA-256 que la extracción no
+modificó los perfiles; se reinició únicamente `digiworld-server` y después se
+publicó el cliente manteniendo los assets anteriores.
+
+Prueba adicional: `scripts/test-quests-ui.cjs`. No pasar `QUEST_UI_TOKEN` en las
+pruebas públicas: esa variable es solo para una base temporal local de pruebas.
+
+### 3.4 Tienda del refugio
+
+La tienda añade `packages/content/src/shop.ts`, sus mensajes y el manejo de
+compras en `WorldRoom`; usa el inventario existente, sin formato de perfiles
+nuevo. El cliente añade una pestaña Tienda dentro de la mochila.
+
+Respaldos de código, web y datos: `before-shop-20261029-101715`, además de la
+copia de datos con el servicio detenido. Se verificó el SHA-256 del archivo de
+perfiles antes/después de extraer el código y se reinició solo el servidor del
+juego. Los assets antiguos se conservaron.
+
+Pruebas: `apps/server/test/shop.ts` y `scripts/test-shop-ui.cjs`. Las compras
+reales automatizadas usan únicamente una fixture temporal local; no pasar
+`SHOP_UI_TOKEN` al probar el sitio público.
+
+### 3.5 Protagonista y compañeros originales DS
+
+Actualización solo de cliente: domador, Gabumon, Patamon, Garurumon y Angemon
+usan atlas originales locales. Se publicó `apps/client/dist` sin reiniciar el
+servidor ni reemplazar sus fuentes o datos. Se conservaron los assets anteriores.
+
+Respaldos: `web-before-party-sprites-20261029-123218.tar.gz` y
+`data-before-party-sprites-20261029-123218.tar.gz`. Se verificó que el SHA-256 de
+los perfiles no cambió durante la extracción; se mantuvieron permisos 600.
+
+Pruebas: `python scripts/test-party-sprites.py` y
+`node scripts/test-party-sprites-ui.cjs`. La prueba pública no lleva
+`PARTY_UI_TOKENS`; esas claves son exclusivamente para fixtures locales aisladas.
+
+### 3.6 Vinculación y recuperación de partidas
+
+Actualiza `profile-store`, `profile-access`, las rutas HTTP, `WorldRoom`,
+`app.config` y los mensajes compartidos. No necesita dependencias nuevas, Docker
+ni cambios en Cloudflare: `/room/profile-access/redeem` usa el prefijo ya
+encaminado al juego. Se reinició únicamente `digiworld-server`.
+
+Respaldos de código, web y datos con sufijo
+`before-profile-access-20261029-142649`, incluida otra copia de datos con el
+servicio detenido. Antes de publicar se validó el archivo real con el nuevo
+lector, sin escribirlo. El SHA-256 no cambió al extraer código.
+
+La primera escritura migra el contenedor JSON a **v2** sin mover las partidas.
+Después de la prueba pública se verificaron los 57 perfiles anteriores:
+**0 perdidos y 0 modificados** respecto a la copia con el servidor detenido.
+Se validó de nuevo el archivo completo con el lector v2 y permisos 600.
+
+**No degradar el servidor a un lector v1 después de crear accesos.** Un rollback
+del cliente sigue siendo posible conservando el servidor compatible con v2.
+Nunca restaurar perfiles antiguos sobre progreso nuevo. La protección de versión
+del servidor anterior rechaza v2 para evitar borrar sus alias/recuperaciones.
+
+Pruebas: `apps/server/test/profile-access.ts` y
+`scripts/test-profile-access-ui.cjs`, además de las regresiones habituales.
+La prueba pública se ejecuta sin `ACCESS_UI_TOKEN`; las claves de fixture solo
+se permiten en bases temporales locales. Instrucciones y seguridad:
+`docs/vinculacion-partidas.md`.
 
 ---
 

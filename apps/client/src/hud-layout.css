@@ -1,0 +1,144 @@
+/* Distribución del HUD: cabecera medida, información arriba y acciones abajo.
+   Las ventanas usan portales para no heredar el backdrop-filter de un panel. */
+.hud {
+  --edge: 12px;
+  --hud-top-end: 60px;
+  padding: max(var(--edge), env(safe-area-inset-top)) max(var(--edge), env(safe-area-inset-right)) max(var(--edge), env(safe-area-inset-bottom)) max(var(--edge), env(safe-area-inset-left));
+}
+.hud-top { gap: 8px; flex: 0 0 auto; }
+.hud-top-right { min-width: 0; flex: 1; }
+.brand-panel { flex: 0 0 auto; padding: 6px 9px; }
+.brand-mark { width: 30px; height: 30px; }
+.brand-copy strong { font-size: 10px; }
+.brand-copy small { font-size: 9px; }
+.status-panel { max-width: 100%; flex-wrap: wrap; justify-content: flex-end; gap: 5px; padding: 5px 7px; }
+.status-panel button { margin: 0; min-height: 30px; padding: 5px 8px; font-size: 10px; }
+.sprite-mode-label { display: none; }
+.roster-panel { position: absolute; right: 0; top: calc(100% + 38px); max-width: 210px; }
+.hud.has-combat .roster-panel { display: none; }
+.world-status { position: absolute; top: calc(var(--hud-top-end) + 6px); left: var(--edge); right: var(--edge); display: flex; gap: 8px; align-items: flex-start; pointer-events: none; }
+.world-status .area-banner, .world-status .loot-toast { position: static; margin: 0; padding: 4px 8px; max-width: 100%; border-radius: 7px; font-size: 10px; line-height: 16px; pointer-events: none; }
+.hud .world-status .area-banner { display: block; flex: 0 1 auto; }
+.world-status .loot-toast { flex: 1; max-width: 420px; }
+.hud .partner-panel { position: absolute; top: calc(var(--hud-top-end) + 38px); left: var(--edge); width: 244px; min-width: 0; gap: 7px; padding: 8px; }
+.partner-orb { width: 28px; height: 28px; }
+.partner-copy { min-width: 0; flex: 1; }
+.partner-copy strong { font-size: 12px; }
+.partner-copy small { font-size: 9px; }
+.hud .combat-panel { top: calc(var(--hud-top-end) + 38px); left: auto; right: var(--edge); transform: none; width: 280px; max-height: calc(100dvh - var(--hud-top-end) - 180px); overflow-y: auto; padding: 8px; }
+.combatant-head strong { font-size: 11px; overflow-wrap: anywhere; }
+.combatant-head { gap: 3px 6px; }
+.combat-hint { font-size: 10px; }
+.combat-header { margin-bottom: 3px; }
+.combatant { padding: 3px 0; }
+.combat-close { width: 28px; height: 28px; }
+.hud-bottom { pointer-events: none; }
+.hud-bottom-left { max-width: 270px; }
+.controls-panel { display: block; width: 260px; padding: 8px; font-size: 10px; }
+.controls-panel summary { cursor: pointer; }
+.controls-panel[open] span { display: block; margin-top: 4px; }
+.hud .ability-bar { bottom: max(var(--edge), env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); gap: 5px; padding: 5px; }
+.hud .ability-button, .hud .target-button { width: 66px; height: 68px; flex-shrink: 0; }
+.ability-name, .target-label { font-size: 9px; }
+.ability-cost, .ability-key, .target-key { font-size: 8px; }
+.ability-state { font-size: 8px; }
+.combat-command-status { width: 100%; bottom: calc(100% + 5px); padding: 5px; font-size: 10px; }
+.hud .chat-toggle { display: block; bottom: max(var(--edge), env(safe-area-inset-bottom)); right: max(var(--edge), env(safe-area-inset-right)); min-height: 36px; padding: 8px 14px; }
+.hud .combat-error { bottom: 124px; max-width: min(400px, calc(100vw - 24px)); font-size: 11px; }
+.hud .combat-feed { top: calc(var(--hud-top-end) + 200px); transform: none; max-height: 100px; overflow: hidden; }
+.evolution-overlay { padding: max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left)); }
+.evolution-overlay .camera-settings { position: static; width: min(400px, 100%); max-height: calc(100dvh - 24px); padding: 14px; }
+.evolution-overlay .chat-panel { position: static; display: flex; width: min(460px, 100%); min-width: 0; max-height: calc(100dvh - 24px); padding: 12px; }
+.chat-close { display: grid; width: 32px; height: 32px; }
+.chat-list { height: min(260px, 40dvh); min-height: 48px; }
+.chat-composer { min-width: 0; }
+.chat-composer input { min-width: 0; font-size: 16px; }
+.evolution-dialog { max-height: calc(100dvh - 24px); overscroll-behavior: contain; }
+.camera-settings { overscroll-behavior: contain; }
+.virtual-joystick { width: 112px; height: 112px; bottom: max(14px, env(safe-area-inset-bottom)); left: max(14px, env(safe-area-inset-left)); }
+.virtual-joystick-knob { width: 48px; height: 48px; margin: -24px 0 0 -24px; }
+.touch-look-area { cursor: grab; }
+.pve-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; }
+.pve-tabs [aria-selected="true"] { border-color: #9fdc9a; background: #386754; }
+.quest-journal { margin: 12px 0; }
+.quest-journal h3 { margin-bottom: 6px; }
+.quest-card { margin-top: 8px; padding: 10px; border: 1px solid #5e997644; border-radius: 8px; overflow-wrap: anywhere; }
+.quest-card.is-active { border-color: #9fdc9a; background: #73dfb10a; }
+.quest-card h4 { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 10px; margin: 0; }
+.quest-card h4 small { font-size: 10px; font-weight: normal; color: #b4cebd; }
+.quest-card p { font-size: 12px; line-height: 1.6; margin: 6px 0; }
+.quest-card progress { display: block; width: 100%; height: 10px; accent-color: #73dfb1; }
+.quest-card button:disabled { opacity: 0.55; cursor: not-allowed; }
+.quest-reward { color: #b5ffbe; font-size: 12px; line-height: 1.6; }
+.shop-offer { margin: 10px 0; padding: 12px; border: 1px solid #5e997644; border-radius: 8px; overflow-wrap: anywhere; }
+.shop-offer h4 { margin: 0; }
+.refuge-shop p { font-size: 12px; line-height: 1.6; }
+.shop-offer button:disabled { opacity: 0.55; cursor: not-allowed; }
+.shop-receipt { color: #b5ffbe; }
+.profile-access-panel p,.profile-access-panel li { font-size: 12px; line-height: 1.6; }
+.access-card { margin: 12px 0; padding: 12px; border: 1px solid #5e997644; border-radius: 8px; }
+.access-card h4 { margin: 0; }
+.access-card ol { padding-left: 18px; }
+.access-card button:disabled { opacity: 0.55; cursor: not-allowed; }
+.access-warning { color: #ffe596; }
+.access-confirm { display: flex; gap: 8px; align-items: flex-start; margin: 10px 0; font-size: 12px; line-height: 1.6; }
+.access-confirm input { flex: 0 0 auto; margin-top: 4px; }
+.private-code { margin-top: 10px; }
+.private-code output { display: block; padding: 10px; border: 1px solid #73dfb166; background: #04120b; color: #d8ffe9; font: bold 16px/1.7 monospace; letter-spacing: 1px; overflow-wrap: anywhere; user-select: all; margin-bottom: 8px; }
+.profile-import-toggle { width: 100%; margin-top: 14px; padding: 12px; color: #e4f7ed; background: #28483d; border: 1px solid #a3d6bd66; border-radius: 8px; cursor: pointer; }
+.profile-import-dialog { width: min(540px,100%); }
+.profile-import-dialog h2 { font-size: 18px; }
+.profile-import-dialog .field { margin: 14px 0; }
+.profile-import-dialog input,.profile-import-dialog select { width: 100%; min-width: 0; padding: 10px; font-size: 16px; color: #e4f7ed; background: #10272b; border: 1px solid #a3d6bd66; border-radius: 6px; }
+
+@media (max-width: 1100px) {
+  .brand-copy, .roster-panel { display: none; }
+  .hud-bottom-left { max-width: 200px; }
+  .controls-panel { width: 200px; }
+}
+.hud.is-mobile .controls-panel, .hud.is-mobile .roster-panel, .hud.is-mobile .combat-feed { display: none; }
+.hud.is-mobile .status-panel button { min-height: 34px; }
+.hud.is-mobile .partner-panel { display: flex; }
+
+@media (max-width: 700px) {
+  .hud { --edge: 8px; }
+  .brand-panel { display: none; }
+  .status-panel { width: 100%; max-width: none; justify-content: center; gap: 4px; }
+  .status-panel .live-dot, .online-count { display: none; }
+  .status-panel button { min-height: 34px; }
+  .save-status { font-size: 9px; }
+  .screen-label { display: none; }
+  .screen-icon { display: inline; }
+  .hud .partner-panel { display: flex; width: calc(45% - 12px); padding: 6px; }
+  .partner-orb, .partner-copy > .panel-title, .partner-copy > small { display: none; }
+  .partner-copy strong { margin: 0 0 4px; }
+  .hud .combat-panel { width: calc(55% - 12px); max-height: 152px; padding: 6px; }
+  .combatant-species { font-size: 9px; }
+  .vital-bars.is-compact .vital-row { grid-template-columns: 14px minmax(0, 1fr) 44px; }
+  .combat-hint { font-size: 9px; }
+  .hud .ability-bar { bottom: max(148px, calc(env(safe-area-inset-bottom) + 132px)); }
+  .hud .ability-button, .hud .target-button { width: clamp(54px, 16vw, 64px); height: 64px; }
+  .ability-state { display: none; }
+  .target-key { display: none; }
+  .world-status .area-banner { font-size: 9px; padding: 3px 6px; }
+  .world-status .loot-toast { font-size: 9px; padding: 3px 6px; max-height: 26px; overflow: hidden; }
+  .hud .combat-error { bottom: 252px; }
+}
+
+/* Móvil horizontal: reservar la franja inferior para ambos pulgares. */
+@media (max-height: 500px) and (min-width: 600px) {
+  .hud { --edge: 8px; }
+  .brand-panel, .status-panel .live-dot, .online-count, .roster-panel, .controls-panel { display: none; }
+  .status-panel { width: 100%; justify-content: center; padding: 3px 6px; }
+  .status-panel button { min-height: 30px; }
+  .hud .partner-panel { width: 180px; padding: 5px; }
+  .partner-orb, .partner-copy > .panel-title, .partner-copy > small { display: none; }
+  .hud .combat-panel { width: 224px; max-height: 130px; padding: 5px 7px; }
+  .hud .ability-bar { left: auto; right: 8px; transform: none; bottom: max(8px, env(safe-area-inset-bottom)); }
+  .hud .ability-button, .hud .target-button { width: 58px; height: 60px; }
+  .ability-state { display: none; }
+  .hud .chat-toggle { bottom: 8px; right: 280px; }
+  .hud .combat-error { bottom: 100px; max-width: 300px; }
+  .hud .combat-feed { display: none; }
+  .world-status .loot-toast { max-height: 24px; overflow: hidden; }
+}

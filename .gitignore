@@ -9,6 +9,8 @@ build/
 coverage/
 *.log
 .vite/
+data/
+apps/server/data/
 
 # Contenido oficial de terceros: nunca se publica ni se sube a GitHub.
 content/official/

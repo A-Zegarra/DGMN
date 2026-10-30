@@ -1,0 +1,95 @@
+import assert from "node:assert/strict";
+import { mkdtempSync, mkdirSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import type { Client, CloseCode } from "colyseus";
+import { BITS_LIMIT, INVENTORY_LIMIT, REFUGE_SHOP_OFFERS, getShopOffer } from "@digiworld/content";
+import { ProfileStore, profileKey } from "../src/storage/profile-store.js";
+import { WorldRoom } from "../src/rooms/WorldRoom.js";
+
+const base = join(tmpdir(), "opencode"); mkdirSync(base, {recursive: true});
+const directory = mkdtempSync(join(base, "shop-room-test-"));
+const events: Array<{id: string; type: string; payload: any}> = [];
+const client = (id: string) => ({sessionId: id, send: (type: string, payload: unknown) => events.push({id, type, payload})} as unknown as Client);
+function createRoom(store: ProfileStore) {
+  const room = new WorldRoom();
+  Object.assign(room, {profileStore: store, systemChat: () => {},
+    broadcast: () => {throw new Error("Las compras no deben ser públicas");},
+    sendTo: (id: string, type: string, payload: unknown) => events.push({id, type, payload})});
+  return room;
+}
+const token = "b".repeat(64), owner = client("buyer");
+const room = createRoom(new ProfileStore(directory));
+room.onJoin(owner, {name: "ShopQA", species: "agumon", profileToken: token});
+const p = room.state.players.get("buyer")!;
+Object.assign(p, {x: 0, z: 0, partnerX: 2, partnerZ: 0});
+const balance = () => ({bits: p.bits, hpPotion: p.hpPotion, epPotion: p.epPotion, devimonSeals: p.devimonSeals});
+const receipts = () => events.filter(e => e.type === "shop_purchase");
+const buy = (offerId: unknown, extras = {}) => room.messages.shop_buy(owner, {offerId, ...extras} as any);
+const fresh = () => room["lastShopAt"].delete("buyer");
+const initial = balance();
+for (const forged of [undefined, null, 0, [], {}, "__proto__", "constructor", "forged"]) buy(forged);
+room.messages.shop_buy(owner, null as any);
+room.messages.shop_buy(client("missing"), {offerId: "hp-disc"});
+assert.deepEqual(balance(), initial, "Mensajes malformados no modifican el inventario");
+buy("hp-disc"); buy("ep-disc"); buy("devimon-supplies");
+assert.deepEqual(balance(), initial, "Bits o sellos insuficientes: sin cobro ni entrega");
+Object.assign(p, {bits: 1000, devimonSeals: 2});
+const funded = balance();
+for (const position of [{x: 22, partnerX: 2}, {x: 0, partnerX: 22}]) {
+  Object.assign(p, position); buy("hp-disc");
+}
+Object.assign(p, {x: 0, partnerX: 2, inCombat: true}); buy("hp-disc");
+p.inCombat = false; p.duelOpponent = "rival"; buy("hp-disc");
+p.duelOpponent = ""; p.hp = 0; buy("hp-disc");
+p.hp = p.maxHp; p.evolutionReadyAt = Date.now() + 10000; buy("hp-disc");
+p.evolutionReadyAt = 0;
+assert.deepEqual(balance(), funded, "Refugio de ambos, combate, duelo, derrota y evolución validados");
+assert.equal(receipts().length, 0);
+const vitals = {hp: p.hp, ep: p.ep, level: p.level, xp: p.xp, itemReadyAt: p.itemReadyAt};
+buy("hp-disc");
+assert.deepEqual(balance(), {bits: 950, hpPotion: 4, epPotion: 2, devimonSeals: 2});
+for (let i = 0; i < 10; i++) buy("hp-disc");
+assert.equal(receipts().length, 1, "Ráfaga de peticiones no duplica el cobro");
+assert.equal(p.bits, 950);
+fresh();
+buy("ep-disc", {quantity: -100, price: 0, cost: {bits: -1000}, reward: {epPotion: 999}, playerId: "someone-else"});
+assert.deepEqual(balance(), {bits: 910, hpPotion: 4, epPotion: 3, devimonSeals: 2}, "Precio, lote y propietario solo los decide el servidor");
+fresh(); buy("devimon-supplies");
+assert.deepEqual(balance(), {bits: 1110, hpPotion: 9, epPotion: 6, devimonSeals: 1});
+assert.deepEqual({hp: p.hp, ep: p.ep, level: p.level, xp: p.xp, itemReadyAt: p.itemReadyAt}, vitals, "Comprar no cura, da XP ni cambia recargas de combate");
+assert.ok(receipts().every(e => e.id === "buyer"), "Recibos privados");
+
+fresh(); p.hpPotion = INVENTORY_LIMIT;
+let before = balance(); buy("hp-disc"); assert.deepEqual(balance(), before);
+p.hpPotion = INVENTORY_LIMIT - 1; buy("hp-disc"); assert.equal(p.hpPotion, INVENTORY_LIMIT);
+fresh(); p.epPotion = INVENTORY_LIMIT;
+before = balance(); buy("ep-disc"); assert.deepEqual(balance(), before);
+p.epPotion = INVENTORY_LIMIT - 1; buy("ep-disc"); assert.equal(p.epPotion, INVENTORY_LIMIT);
+fresh();
+Object.assign(p, {hpPotion: 994, epPotion: 996, bits: BITS_LIMIT - 199, devimonSeals: 1});
+before = balance(); buy("devimon-supplies"); assert.deepEqual(balance(), before, "Bits al límite: no consumir el sello");
+p.bits = 100; p.hpPotion = 995;
+before = balance(); buy("devimon-supplies"); assert.deepEqual(balance(), before, "El lote no se entrega parcialmente");
+p.hpPotion = 994; p.epPotion = 997;
+before = balance(); buy("devimon-supplies"); assert.deepEqual(balance(), before);
+Object.assign(p, {hpPotion: 994, epPotion: 996, bits: BITS_LIMIT - 200});
+buy("devimon-supplies");
+assert.deepEqual(balance(), {bits: BITS_LIMIT, hpPotion: INVENTORY_LIMIT, epPotion: INVENTORY_LIMIT, devimonSeals: 0});
+const final = balance();
+await room.onLeave(owner, 1000 as CloseCode);
+assert.equal(room["lastShopAt"].has("buyer"), false);
+const stored = new ProfileStore(directory).get(profileKey(token))!;
+assert.deepEqual(stored.inventory, final, "Cobro y entrega guardados juntos en disco");
+const restarted = createRoom(new ProfileStore(directory));
+const restoredClient = client("restored");
+restarted.onJoin(restoredClient, {profileToken: token});
+const restored = restarted.state.players.get("restored")!;
+assert.equal(restored.bits, final.bits); assert.equal(restored.hpPotion, final.hpPotion);
+assert.equal(restored.epPotion, final.epPotion); assert.equal(restored.devimonSeals, 0);
+restarted.messages.shop_buy(restoredClient, {offerId: "devimon-supplies"});
+assert.equal(restored.devimonSeals, 0, "No reutilizar un sello gastado después de reiniciar");
+await restarted.onLeave(restoredClient, 1000 as CloseCode);
+assert.equal(new Set(REFUGE_SHOP_OFFERS.map(offer => offer.id)).size, REFUGE_SHOP_OFFERS.length);
+assert.equal(getShopOffer("__proto__"), undefined);
+console.log("PASS: tienda, compras y canje, precios/lotes autoritativos, refugio, estado, saldo, capacidad, ráfagas, privacidad, disco y reinicio");

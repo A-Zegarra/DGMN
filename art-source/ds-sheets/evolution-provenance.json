@@ -1,0 +1,67 @@
+{
+  "devimon": {
+    "source": "art-source\\ds-sheets\\devimon_raw.png",
+    "sha256": "5243a09d097905dfb84c58d6e80493808a266534506765a1e71e97c3570a44be",
+    "credits": "redblueyellow",
+    "sheet": 48593,
+    "url": "https://www.spriters-resource.com/ds_dsi/dgmnworldds/sheet/48593/",
+    "atlas": "apps\\client\\src\\assets\\sprites\\devimon-ds.png",
+    "dimensions": [
+      384,
+      336
+    ],
+    "limitations": "Vistas originales disponibles; se reutiliza/refleja la más cercana donde faltan ángulos. Reacción con pose original y tinte, no secuencia específica de daño."
+  },
+  "koromon": {
+    "source": "MODELOS DE SPRITES\\KOROMON\\DS _ DSi - Digimon World DS - In-Training Digimon - Koromon.png",
+    "sha256": "093fa0e5087403a68fbfd435a10bc8e0a94075a086e8e0f4f0dd512415baf3fb",
+    "credits": "Atlanta",
+    "sheet": 20462,
+    "url": "https://www.spriters-resource.com/ds_dsi/dgmnworldds/sheet/20462/",
+    "atlas": "apps\\client\\src\\assets\\sprites\\koromon-ds.png",
+    "dimensions": [
+      384,
+      336
+    ],
+    "limitations": "Vistas originales disponibles; se reutiliza/refleja la más cercana donde faltan ángulos. Reacción con pose original y tinte, no secuencia específica de daño."
+  },
+  "greymon": {
+    "source": "MODELOS DE SPRITES\\GREYMON\\DS _ DSi - Digimon World DS - Champion Digimon - Greymon.png",
+    "sha256": "2b97f4124e646fec2191bcc1e347dde257202e21a8bef431d473fbd996f52cf4",
+    "credits": "A.J. Nitro y redblueyellow",
+    "sheet": 48406,
+    "url": "https://www.spriters-resource.com/ds_dsi/dgmnworldds/sheet/48406/",
+    "atlas": "apps\\client\\src\\assets\\sprites\\greymon-ds.png",
+    "dimensions": [
+      384,
+      336
+    ],
+    "limitations": "Vistas originales disponibles; se reutiliza/refleja la más cercana donde faltan ángulos. Reacción con pose original y tinte, no secuencia específica de daño."
+  },
+  "metalgreymon": {
+    "source": "MODELOS DE SPRITES\\METALGREYMON\\DS _ DSi - Digimon World DS - Ultimate Digimon - MetalGreymon.png",
+    "sha256": "2f370926a0585787dfbae2b575509f8698a80539c8a68c87d3586b1d99a05665",
+    "credits": "RadSpyro",
+    "sheet": 48322,
+    "url": "https://www.spriters-resource.com/ds_dsi/dgmnworldds/sheet/48322/",
+    "atlas": "apps\\client\\src\\assets\\sprites\\metalgreymon-ds.png",
+    "dimensions": [
+      384,
+      336
+    ],
+    "limitations": "Vistas originales disponibles; se reutiliza/refleja la más cercana donde faltan ángulos. Reacción con pose original y tinte, no secuencia específica de daño."
+  },
+  "wargreymon": {
+    "source": "MODELOS DE SPRITES\\WARGREYMON\\DS _ DSi - Digimon World DS - Mega Digimon - WarGreymon.png",
+    "sha256": "851b7c43086285b62df483b6486f41e40278c66b1e17b6982d9e20229e0434b2",
+    "credits": "A.J. Nitro y redblueyellow",
+    "sheet": 48613,
+    "url": "https://www.spriters-resource.com/ds_dsi/dgmnworldds/sheet/48613/",
+    "atlas": "apps\\client\\src\\assets\\sprites\\wargreymon-ds.png",
+    "dimensions": [
+      384,
+      336
+    ],
+    "limitations": "Vistas originales disponibles; se reutiliza/refleja la más cercana donde faltan ángulos. Reacción con pose original y tinte, no secuencia específica de daño."
+  }
+}

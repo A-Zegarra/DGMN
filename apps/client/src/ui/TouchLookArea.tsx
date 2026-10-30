@@ -1,7 +1,6 @@
 import { useEffect, useRef } from "react";
 
 import type { WorldClient } from "../net/world-client";
-import { requestPointerLockSafe } from "../pointer-lock";
 
 /**
  * Zona táctil dedicada para mirar. Está por encima del canvas pero por debajo
@@ -19,12 +18,13 @@ export function TouchLookArea({ client }: { client: WorldClient }) {
     }
 
     const reset = () => {
+      const id = pointerId.current;
       pointerId.current = null;
+      if (id !== null && area.hasPointerCapture(id)) area.releasePointerCapture(id);
     };
 
     const handlePointerDown = (event: PointerEvent) => {
-      if (event.pointerType === "mouse") {
-        requestPointerLockSafe();
+      if (event.pointerType === "mouse" || client.inputBlocked) {
         return;
       }
       if (pointerId.current !== null) {
@@ -55,7 +55,7 @@ export function TouchLookArea({ client }: { client: WorldClient }) {
 
     const handlePointerEnd = (event: PointerEvent) => {
       if (event.pointerId === pointerId.current) {
-        pointerId.current = null;
+        reset();
       }
     };
 
@@ -66,6 +66,7 @@ export function TouchLookArea({ client }: { client: WorldClient }) {
     };
 
     area.addEventListener("pointerdown", handlePointerDown, { passive: false });
+    const unsubscribe = client.subscribeInputReset(reset);
     area.addEventListener("pointermove", handlePointerMove, { passive: false });
     area.addEventListener("pointerup", handlePointerEnd);
     area.addEventListener("pointercancel", handlePointerEnd);
@@ -75,6 +76,8 @@ export function TouchLookArea({ client }: { client: WorldClient }) {
     area.addEventListener("contextmenu", preventDefault);
 
     return () => {
+      unsubscribe();
+      reset();
       area.removeEventListener("pointerdown", handlePointerDown);
       area.removeEventListener("pointermove", handlePointerMove);
       area.removeEventListener("pointerup", handlePointerEnd);

@@ -8,8 +8,9 @@ import {
   type StarterId,
 } from "@digiworld/content";
 
-import { hasDetailedModel } from "../game/models/DetailedDigimon";
 import { CharacterStage } from "./CharacterStage";
+import { getSavedProfile } from "../net/profile";
+import { ProfileImport } from "./ProfileImport";
 
 const STAT_MAX = {
   hp: 300,
@@ -59,8 +60,9 @@ export function StartScreen({
   error: string | null;
   onJoin: (name: string, species: string) => void;
 }) {
-  const [name, setName] = useState(initialName);
-  const [selected, setSelected] = useState<StarterId>("agumon");
+  const [saved,setSaved] = useState(getSavedProfile);
+  const [name, setName] = useState(saved?.name ?? initialName);
+  const [selected, setSelected] = useState<StarterId>("koromon");
   const shouldAutoFocus =
     typeof window !== "undefined" &&
     window.matchMedia("(pointer: fine)").matches &&
@@ -69,15 +71,16 @@ export function StartScreen({
   const trimmed = name.trim();
   const validName = trimmed.length >= 2 && trimmed.length <= 16;
   const connecting = status === "connecting";
-  const species = SPECIES[selected]!;
-  const evolutions = getEvolutionTargets(selected);
+  const displaySpecies = saved?.species ?? selected;
+  const species = SPECIES[displaySpecies]!;
+  const evolutions = getEvolutionTargets(displaySpecies);
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
     if (!validName || connecting) {
       return;
     }
-    onJoin(trimmed, selected);
+    onJoin(trimmed, displaySpecies);
   };
 
   return (
@@ -98,32 +101,30 @@ export function StartScreen({
           </h1>
 
           <p className="lead">
-            Un MMORPG 3D ligero para navegador y Android. Explora el Bosque
-            Digital en primera o tercera persona, combate en duelos en tiempo
-            real y descubre el nuevo modelo PBR de Agumon.
+            Un MMORPG 2.5D con sprites DS para navegador y Android. Explora el Bosque
+            Digital con cámara elevada en tercera persona estilo Digimon World
+            DS / Ragnarok y combate en tiempo real con tu Digimon.
           </p>
 
           <ul className="feature-pills">
-            <li>Agumon en PBR</li>
-            <li>Duelos PvP</li>
+            <li>Sprites DS</li>
+            <li>Cámara 3ª persona elevada</li>
             <li>Web + Android</li>
           </ul>
 
           <div
-            className={`character-showcase ${hasDetailedModel(selected) ? "is-detailed" : ""}`}
+            className="character-showcase"
           >
-            <CharacterStage speciesId={selected} />
+            <CharacterStage speciesId={displaySpecies} />
             <div className="character-showcase-top">
               <span className="character-showcase-title">
-                Vista 3D · <strong>{species.name}</strong>
+                Vista DS · <strong>{species.name}</strong>
               </span>
-              <span className="detail-badge">
-                {hasDetailedModel(selected) ? "PBR detallado" : "Low-poly"}
-              </span>
+              <span className="detail-badge">Sprites DS</span>
             </div>
           </div>
           <p className="character-showcase-caption">
-            Arrastra para girar · iluminación de estudio · materiales PBR
+            Arrastra para ver las vistas disponibles del sprite DS
           </p>
         </section>
 
@@ -133,6 +134,7 @@ export function StartScreen({
               <span>Nombre de domador</span>
               <input
                 value={name}
+                readOnly={Boolean(saved)}
                 onChange={(event) => setName(event.target.value)}
                 maxLength={16}
                 placeholder="Ej. Alvaro"
@@ -141,7 +143,13 @@ export function StartScreen({
               <small>Entre 2 y 16 caracteres.</small>
             </label>
 
-            <fieldset className="starter-fieldset">
+            {saved && <section className="saved-profile panel">
+              <strong>Tu partida guardada</strong>
+              <p>{saved.name} · {species.name} · Nivel {saved.level}</p>
+              <small>XP {saved.xp}/{saved.xpNext} · {saved.duelWins} victorias / {saved.duelLosses} derrotas</small>
+              <p>El servidor recuperará tu progreso real. Puedes vincular otro dispositivo y crear una clave de recuperación desde Mochila / Mapa → Partida. No borres los datos del sitio sin otro acceso.</p>
+            </section>}
+            {!saved && <fieldset className="starter-fieldset">
               <legend>Elige tu compañero</legend>
               <div className="starter-grid">
                 {STARTER_IDS.map((id) => {
@@ -168,7 +176,7 @@ export function StartScreen({
                   );
                 })}
               </div>
-            </fieldset>
+            </fieldset>}
 
             <div className="species-preview">
               <div className="species-heading">
@@ -208,7 +216,7 @@ export function StartScreen({
               className="join-button"
               disabled={!validName || connecting}
             >
-              {connecting ? "Conectando..." : "Entrar al Bosque Digital"}
+              {connecting ? "Recuperando partida..." : saved ? `Continuar con ${species.name} (Nv. ${saved.level})` : "Entrar al Bosque Digital"}
             </button>
 
             {error && <p className="form-error">{error}</p>}
@@ -218,6 +226,7 @@ export function StartScreen({
               pertenecen a sus titulares; no distribuir este prototipo.
             </p>
           </form>
+          <ProfileImport hasSaved={Boolean(saved)} disabled={connecting} onImported={profile=>{setSaved(profile);setName(profile.name);}}/>
         </section>
       </main>
     </div>

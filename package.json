@@ -12,6 +12,7 @@
     "dev:server": "pnpm --filter @digiworld/server dev",
     "dev:client": "pnpm --filter @digiworld/client dev",
     "typecheck": "pnpm -r typecheck",
-    "build": "pnpm -r build"
+    "build": "pnpm -r build",
+    "build:public": "node scripts/build-public.mjs"
   }
 }

@@ -17,6 +17,15 @@ export interface Ability {
 }
 
 export const ABILITIES: Record<string, Ability> = {
+  koromon_bubble: { id: "koromon_bubble", name: "Burbujas Ácidas", description: "Lanza burbujas ácidas contra un enemigo.", icon: "🫧", color: "#f9a8d4", kind: "damage", cost: 2, cooldownMs: 3500, range: 10, amount: 8 },
+  koromon_bounce: { id: "koromon_bounce", name: "Salto Burbuja", description: "Un pequeño golpe de cuerpo a corta distancia.", icon: "💥", color: "#f472b6", kind: "damage", cost: 2, cooldownMs: 5000, range: 5, amount: 10 },
+  koromon_recover: { id: "koromon_recover", name: "Recuperación Inicial", description: "Recompone algunos datos durante el combate.", icon: "💚", color: "#86efac", kind: "heal", cost: 3, cooldownMs: 10000, range: 0, amount: 12 },
+  metalgreymon_giga: { id: "metalgreymon_giga", name: "Giga Destructor", description: "Una descarga de misiles orgánicos contra el objetivo.", icon: "🚀", color: "#fb923c", kind: "damage", cost: 22, cooldownMs: 8500, range: 16, amount: 64 },
+  metalgreymon_trident: { id: "metalgreymon_trident", name: "Brazo Tridente", description: "Golpea con su poderosa garra mecánica.", icon: "🦾", color: "#cbd5e1", kind: "damage", cost: 12, cooldownMs: 4500, range: 7, amount: 44 },
+  metalgreymon_flame: { id: "metalgreymon_flame", name: "Llama Nuclear", description: "Aliento ígneo de alta potencia.", icon: "🔥", color: "#ef4444", kind: "damage", cost: 18, cooldownMs: 6500, range: 12, amount: 52 },
+  wargreymon_gaia: { id: "wargreymon_gaia", name: "Fuerza de Gaia", description: "Concentra energía en una esfera de fuego devastadora.", icon: "☀️", color: "#facc15", kind: "damage", cost: 32, cooldownMs: 10000, range: 18, amount: 100 },
+  wargreymon_dramon: { id: "wargreymon_dramon", name: "Garras Dramon", description: "Ataque cercano con ambas garras de cromo Digizoid.", icon: "⚔️", color: "#e2e8f0", kind: "damage", cost: 18, cooldownMs: 4500, range: 6, amount: 68 },
+  wargreymon_tornado: { id: "wargreymon_tornado", name: "Tornado Valiente", description: "Embestida giratoria hacia el enemigo seleccionado.", icon: "🌪️", color: "#fbbf24", kind: "damage", cost: 24, cooldownMs: 7000, range: 10, amount: 82 },
   agumon_claw: {
     id: "agumon_claw",
     name: "Garra Ardiente",
@@ -274,6 +283,9 @@ export const ABILITIES: Record<string, Ability> = {
 const GENERIC_IDS = ["generic_strike", "generic_burst", "generic_recover"];
 
 export const SPECIES_ABILITIES: Record<string, string[]> = {
+  koromon: ["koromon_bubble", "koromon_bounce", "koromon_recover"],
+  metalgreymon: ["metalgreymon_giga", "metalgreymon_trident", "metalgreymon_flame"],
+  wargreymon: ["wargreymon_gaia", "wargreymon_dramon", "wargreymon_tornado"],
   agumon: ["agumon_claw", "agumon_flame", "agumon_bite"],
   greymon: ["greymon_horn", "greymon_mega", "greymon_tail"],
   gabumon: ["gabumon_claw", "gabumon_ice", "gabumon_howl"],

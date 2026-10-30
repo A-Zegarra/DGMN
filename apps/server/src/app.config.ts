@@ -1,6 +1,7 @@
 import { defineRoom, defineServer } from "colyseus";
 
 import { WorldRoom } from "./rooms/WorldRoom";
+import { registerProfileAccessRoutes } from "./profile-access-routes";
 
 const app = defineServer({
   rooms: {
@@ -8,6 +9,7 @@ const app = defineServer({
   },
 
   express: (expressApp) => {
+    registerProfileAccessRoutes(expressApp);
     expressApp.get("/health", (_req, res) => {
       res.json({
         ok: true,
